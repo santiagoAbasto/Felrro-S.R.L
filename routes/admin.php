@@ -69,6 +69,10 @@ Route::prefix('admin')
         */
         Route::get('/', function () {
             if (auth()->check()) {
+                if (! auth()->user()->isAdmin()) {
+                    return redirect()->route('home');
+                }
+
                 return redirect()->route('admin.dashboard');
             }
             return redirect()->route('admin.login');
@@ -93,7 +97,7 @@ Route::prefix('admin')
         | AUTHENTICATED ADMIN
         |--------------------------------------------------------------------------
         */
-        Route::middleware(['auth', 'verified'])->group(function () {
+        Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 
             /*
             |--------------------------------------------------------------------------

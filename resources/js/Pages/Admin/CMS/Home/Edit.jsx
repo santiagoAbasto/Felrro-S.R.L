@@ -44,6 +44,10 @@ export default function Edit({ section }) {
                     Gestión Nosotros (Home)
                 </h1>
 
+                <p className="text-gray-500 max-w-3xl">
+                    Esta sección corresponde al bloque de vista previa que aparece dentro de la página pública de inicio. No edita la página completa de <strong>Nosotros</strong>, que se administra por separado.
+                </p>
+
                 <form onSubmit={submit} className="space-y-10">
 
                     {/* =====================================================

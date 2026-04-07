@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class JobApplicationController extends Controller
 {
@@ -31,20 +33,60 @@ class JobApplicationController extends Controller
             'cover_letter_path' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
-        // Guardar CV
+        // Guardar CV en almacenamiento privado (no accesible vía URL pública)
         $validated['cv_path'] = $request
             ->file('cv_path')
-            ->store('job-applications/cvs', 'public');
+            ->store('job-applications/cvs', 'private');
 
-        // Guardar Carta
+        // Guardar Carta en almacenamiento privado
         if ($request->hasFile('cover_letter_path')) {
             $validated['cover_letter_path'] = $request
                 ->file('cover_letter_path')
-                ->store('job-applications/letters', 'public');
+                ->store('job-applications/letters', 'private');
         }
 
         JobApplication::create($validated);
 
         return back()->with('success', __('messages.application_sent_successfully'));
+    }
+
+    /**
+     * Descargar CV de una aplicación (solo para admins autenticados)
+     */
+    public function downloadCv(JobApplication $application)
+    {
+        // Verificar que el usuario está autenticado y es admin
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            abort(403, 'No tienes permiso para descargar este archivo.');
+        }
+
+        if (!$application->cv_path || !Storage::disk('private')->exists($application->cv_path)) {
+            abort(404, 'El archivo CV no existe.');
+        }
+
+        return Storage::disk('private')->download(
+            $application->cv_path,
+            "CV-{$application->first_name}-{$application->last_name}.pdf"
+        );
+    }
+
+    /**
+     * Descargar Carta de presentación (solo para admins autenticados)
+     */
+    public function downloadCoverLetter(JobApplication $application)
+    {
+        // Verificar que el usuario está autenticado y es admin
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            abort(403, 'No tienes permiso para descargar este archivo.');
+        }
+
+        if (!$application->cover_letter_path || !Storage::disk('private')->exists($application->cover_letter_path)) {
+            abort(404, 'El archivo no existe.');
+        }
+
+        return Storage::disk('private')->download(
+            $application->cover_letter_path,
+            "CoverLetter-{$application->first_name}-{$application->last_name}.pdf"
+        );
     }
 }

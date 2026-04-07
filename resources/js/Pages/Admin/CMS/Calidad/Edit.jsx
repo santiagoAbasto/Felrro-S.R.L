@@ -1,5 +1,5 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import { Icon } from "@iconify/react";
 import { useState } from "react";
 
@@ -47,8 +47,36 @@ export default function Edit({ section }) {
                         Editar Sección Calidad
                     </h1>
                     <p className="text-gray-500 mt-2">
-                        Gestiona contenido multilenguaje y configuración visual.
+                        Gestiona el bloque principal de la página pública de Calidad.
                     </p>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Certificados de Calidad
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+                                Los logos y archivos PDF que se muestran en la parte pública se gestionan desde el módulo de certificados.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                            <Link
+                                href={route("admin.certificates.index")}
+                                className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+                            >
+                                Ver certificados
+                            </Link>
+                            <Link
+                                href={route("admin.certificates.create")}
+                                className="px-5 py-2.5 bg-[#25A7CA] hover:bg-[#1f8ea8] text-white rounded-xl shadow-sm transition"
+                            >
+                                Nuevo certificado
+                            </Link>
+                        </div>
+                    </div>
                 </div>
 
                 <form onSubmit={submit} className="space-y-10">

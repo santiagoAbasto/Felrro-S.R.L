@@ -33,6 +33,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (! $request->user()->isAdmin()) {
+            Auth::guard('web')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'Tu cuenta no tiene permisos para acceder al panel de administración.',
+            ]);
+        }
+
         return redirect()->route('admin.dashboard');
     }
 

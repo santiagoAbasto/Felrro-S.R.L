@@ -55,7 +55,9 @@ Route::get('/novedades/{slug}', [PostController::class, 'show'])->name('novedade
 |--------------------------------------------------------------------------
 */
 Route::get('/rrhh', [PageController::class, 'rrhh'])->name('rrhh');
-Route::post('/rrhh', [JobApplicationController::class, 'store'])->name('rrhh.store');
+Route::post('/rrhh', [JobApplicationController::class, 'store'])
+    ->middleware('throttle:5,60')  // 5 submissions per minute
+    ->name('rrhh.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -63,7 +65,9 @@ Route::post('/rrhh', [JobApplicationController::class, 'store'])->name('rrhh.sto
 |--------------------------------------------------------------------------
 */
 Route::get('/contacto', [PageController::class, 'contacto'])->name('contacto');
-Route::post('/contacto', [ContactMessageController::class, 'store'])->name('contacto.store');
+Route::post('/contacto', [ContactMessageController::class, 'store'])
+    ->middleware('throttle:5,60')  // 5 contact forms per minute
+    ->name('contacto.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +86,7 @@ Route::post('/cotizacion/update/{product}', [PageController::class, 'updateQuota
     ->name('cotizacion.update');
 
 Route::post('/cotizacion/send', [PageController::class, 'sendQuotation'])
+    ->middleware('throttle:5,60')  // 5 quotation requests per minute
     ->name('cotizacion.send');
 
 /*
@@ -91,6 +96,7 @@ Route::post('/cotizacion/send', [PageController::class, 'sendQuotation'])
 */
 
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
+    ->middleware('throttle:10,60')  // 10 subscriptions per minute
     ->name('newsletter.subscribe');
 
 /*

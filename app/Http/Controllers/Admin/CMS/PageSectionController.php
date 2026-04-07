@@ -556,8 +556,24 @@ class PageSectionController extends Controller
             'info.schedule.en'     => 'nullable|string',
             'info.is_active'       => 'nullable|boolean',
 
-            // Map
-            'map.iframe'           => 'required|string',
+            // Map - Only allow Google Maps or Mapbox iframe embeds
+            'map.iframe'           => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    // Only allow Google Maps and Mapbox embed iframes
+                    if (!preg_match('/<iframe[^>]+(src=["\'](https:\/\/(www\.)?google\.com\/maps|https:\/\/api\.mapbox\.com|https:\/\/embed\.maps\.arcgis\.com)[^"\']*["\'][^>]*>.*?<\/iframe>/is', $value)) {
+                        // If not a full iframe, try to validate just the src attribute
+                        if (!preg_match('/(https:\/\/(www\.)?google\.com\/maps|https:\/\/api\.mapbox\.com|https:\/\/embed\.maps\.arcgis\.com)/i', $value)) {
+                            $fail('El iframe debe ser de Google Maps, Mapbox o ArcGIS.');
+                        }
+                    }
+                    // Additional security: strip any script tags or event handlers
+                    if (preg_match('/<script|on\w+\s*=/i', $value)) {
+                        $fail('El iframe no puede contener scripts o manejadores de eventos.');
+                    }
+                },
+            ],
             'map.is_active'        => 'nullable|boolean',
         ]);
 

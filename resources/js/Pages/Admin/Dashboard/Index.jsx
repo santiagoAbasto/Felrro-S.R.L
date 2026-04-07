@@ -93,10 +93,12 @@ export default function Dashboard({
                     ACCESOS RÁPIDOS
                 ============================ */}
                 <PanelCard title="Accesos rápidos">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                        <QuickLink label="Editar Home" routeName="admin.pages.index" />
-                        <QuickLink label="Productos" routeName="admin.products.index" />
-                        <QuickLink label="Posts" routeName="admin.posts.index" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
+                        <QuickLink label="Home: Nosotros" routeName="admin.cms.home.edit" />
+                        <QuickLink label="Home: Hero" routeName="admin.hero.index" />
+                        <QuickLink label="Nosotros" routeName="admin.about.edit" />
+                        <QuickLink label="Calidad" routeName="admin.cms.calidad.edit" />
+                        <QuickLink label="Certificados" routeName="admin.certificates.index" />
                         <QuickLink label="Cotizaciones" routeName="admin.comercial.quotations.index" />
                     </div>
                 </PanelCard>

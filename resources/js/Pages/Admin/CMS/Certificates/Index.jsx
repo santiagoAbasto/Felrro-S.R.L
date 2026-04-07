@@ -1,7 +1,16 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 
 export default function Index({ certificates }) {
+    const destroyCertificate = (certificate) => {
+        if (!confirm(`¿Eliminar el certificado "${certificate.name?.es ?? "sin nombre"}"? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+
+        router.delete(route("admin.certificates.destroy", certificate.id), {
+            preserveScroll: true,
+        });
+    };
 
     return (
         <AdminLayout>
@@ -42,6 +51,13 @@ export default function Index({ certificates }) {
                                     >
                                         Editar
                                     </Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => destroyCertificate(cert)}
+                                        className="text-red-600 underline"
+                                    >
+                                        Eliminar
+                                    </button>
                                 </td>
                             </tr>
                         ))}

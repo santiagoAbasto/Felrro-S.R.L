@@ -170,6 +170,8 @@ class CertificateController extends Controller
 
         $certificate->delete();
 
-        return back()->with('success', 'Certificado eliminado correctamente.');
+        return redirect()
+            ->route('admin.certificates.index')
+            ->with('success', 'Certificado eliminado correctamente.');
     }
 }
