@@ -2,14 +2,64 @@
 <html lang="{{ session('locale', 'es') }}">
 <head>
     <meta charset="UTF-8">
-    <title>@yield('title', 'Felrro - Cables Especiales')</title>
-    <meta name="description" content="@yield('meta_description', 'Fabricación de conductores eléctricos especiales certificados UL e ISO 9001.')">
+    @php
+        $faviconPngPath = public_path('favicon/favicon-96x96.png');
+        $faviconIcoPath = public_path('favicon/favicon.ico');
+        $faviconSvgPath = public_path('favicon/favicon.svg');
+        $appleTouchIconPath = public_path('favicon/apple-touch-icon.png');
+        $manifestPath = public_path('favicon/site.webmanifest');
+
+        $faviconVersion = file_exists($faviconPngPath)
+            ? filemtime($faviconPngPath)
+            : time();
+        $faviconIcoVersion = file_exists($faviconIcoPath)
+            ? filemtime($faviconIcoPath)
+            : $faviconVersion;
+        $faviconSvgVersion = file_exists($faviconSvgPath)
+            ? filemtime($faviconSvgPath)
+            : $faviconVersion;
+        $appleTouchIconVersion = file_exists($appleTouchIconPath)
+            ? filemtime($appleTouchIconPath)
+            : $faviconVersion;
+        $manifestVersion = file_exists($manifestPath)
+            ? filemtime($manifestPath)
+            : $faviconVersion;
+        $fallbackTitle = trim($__env->yieldContent('title', 'Felrro - Cables Especiales'));
+        $fallbackDescription = trim($__env->yieldContent('meta_description', 'Fabricación de conductores eléctricos especiales certificados UL e ISO 9001.'));
+        $resolvedTitle = $seoMeta['title'] ?? $fallbackTitle;
+        $resolvedDescription = $seoMeta['description'] ?? $fallbackDescription;
+        $resolvedKeywords = $seoMeta['keywords'] ?? null;
+        $resolvedOgImage = $seoMeta['og_image_url'] ?? asset('images/logo.png');
+        $resolvedUrl = $seoMeta['url'] ?? url()->current();
+        $resolvedType = $seoMeta['type'] ?? 'website';
+    @endphp
+
+    <title>{{ $resolvedTitle }}</title>
+    <meta name="description" content="{{ $resolvedDescription }}">
+    @if(!empty($resolvedKeywords))
+    <meta name="keywords" content="{{ $resolvedKeywords }}">
+    @endif
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon/favicon.svg') }}?v={{ $faviconSvgVersion }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon/favicon-96x96.png') }}?v={{ $faviconVersion }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon/favicon.ico') }}?v={{ $faviconIcoVersion }}">
+    <link rel="shortcut icon" href="{{ asset('favicon/favicon.ico') }}?v={{ $faviconIcoVersion }}">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v={{ $faviconIcoVersion }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}?v={{ $appleTouchIconVersion }}">
+    <link rel="manifest" href="{{ asset('favicon/site.webmanifest') }}?v={{ $manifestVersion }}">
     <meta name="author" content="Felrro S.R.L.">
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="@yield('title', 'Felrro - Cables Especiales')">
-    <meta property="og:description" content="@yield('meta_description', 'Fabricación de conductores eléctricos especiales.')">
-    <meta property="og:type" content="website">
+    <link rel="canonical" href="{{ $resolvedUrl }}">
+    <meta property="og:title" content="{{ $resolvedTitle }}">
+    <meta property="og:description" content="{{ $resolvedDescription }}">
+    <meta property="og:type" content="{{ $resolvedType }}">
+    <meta property="og:url" content="{{ $resolvedUrl }}">
+    <meta property="og:site_name" content="Felrro">
+    <meta property="og:image" content="{{ $resolvedOgImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $resolvedTitle }}">
+    <meta name="twitter:description" content="{{ $resolvedDescription }}">
+    <meta name="twitter:image" content="{{ $resolvedOgImage }}">
 
     {{-- ANTI-FOUC: ocultar body hasta que CSS esté listo --}}
     <style>body{visibility:hidden;}</style>

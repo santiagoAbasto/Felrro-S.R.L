@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\SeoController;
 
 /* Catalog */
 use App\Http\Controllers\Admin\Catalog\ProductController;
@@ -167,6 +168,12 @@ Route::prefix('admin')
 
             Route::put('/cms/calidad', [CalidadController::class, 'update'])
                 ->name('cms.calidad.update');
+
+            Route::get('/seo', [SeoController::class, 'index'])
+                ->name('seo.index');
+
+            Route::post('/metadatos', [SeoController::class, 'upsert'])
+                ->name('seo.upsert');
 
             Route::resource('posts', PostController::class);
             Route::resource('certificates', CertificateController::class);

@@ -29,6 +29,7 @@ export default function Sidebar() {
                 { title: "Certificados", icon: "solar:diploma-verified-outline", url: "/admin/certificates" },
                 { title: "Descargas", icon: "solar:download-outline", url: "/admin/downloads" },
                 { title: "Novedades", icon: "solar:document-text-outline", url: "/admin/posts" },
+                { title: "Metadatos SEO", icon: "solar:global-outline", url: "/admin/seo" },
             ],
         },
 
