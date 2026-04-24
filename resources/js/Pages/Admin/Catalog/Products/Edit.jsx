@@ -1,7 +1,9 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import { useMemo } from "react";
+import { route } from "ziggy-js";
 import ProductForm from "./Form";
+import { AdminPageHeader } from "@/Components/Admin/FormElements";
 
 export default function Edit({ product, categories }) {
 
@@ -76,40 +78,24 @@ export default function Edit({ product, categories }) {
 
     return (
         <AdminLayout>
-            <Head title={`Editar - ${product?.name?.es || "Producto"}`} />
+            <Head title={`Editar ${product?.name?.es || "producto"}`} />
 
-            <div className="space-y-10">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Productos"
+                    title={`Editar ${product?.name?.es || "producto"}`}
+                    description="Podés ajustar el contenido, revisar imágenes y actualizar la ficha técnica sin perder lo ya cargado."
+                    actions={
+                        <Link
+                            href={route("admin.products.index")}
+                            className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                        >
+                            Volver al listado
+                        </Link>
+                    }
+                />
 
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Editar Producto
-                        </h1>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                            Modificando:{" "}
-                            <span className="font-medium text-gray-700">
-                                {product?.name?.es}
-                            </span>
-                        </p>
-
-                        {product?.image_url && (
-                            <p className="text-xs text-gray-400 mt-1">
-                                Imagen actual cargada: {product.image_url}
-                            </p>
-                        )}
-                    </div>
-
-                    <Link
-                        href={route("admin.products.index")}
-                        className="text-sm text-gray-600 hover:text-indigo-600 transition"
-                    >
-                        ← Volver al listado
-                    </Link>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-
+                <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                     <ProductForm
                         data={data}
                         setData={setData}
@@ -118,14 +104,12 @@ export default function Edit({ product, categories }) {
                         errors={errors}
                         buttonText={
                             processing
-                                ? "Actualizando..."
-                                : "Actualizar Producto"
+                                ? "Guardando..."
+                                : "Guardar cambios"
                         }
                         categories={categories}
                     />
-
                 </div>
-
             </div>
         </AdminLayout>
     );

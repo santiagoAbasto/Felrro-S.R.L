@@ -44,7 +44,7 @@ class WebProductController extends Controller
             ->orderBy('order')
             ->get();
 
-        return view('web.Categories.category', [
+        return view('web.categories.category', [
             'category'      => $category,
             'products'      => $products,
             'allCategories' => $allCategories,

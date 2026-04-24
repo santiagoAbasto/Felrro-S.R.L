@@ -1,9 +1,8 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { useCallback } from "react";
+import { route } from "ziggy-js";
 import ProductForm from "./Form";
-
-
+import { AdminPageHeader } from "@/Components/Admin/FormElements";
 
 export default function Create({ categories }) {
 
@@ -41,37 +40,27 @@ export default function Create({ categories }) {
     /* =====================================================
        SUBMIT CONTROLADO (ANTI-LOOP ENTERPRISE)
     ===================================================== */
-    const submit = useCallback((e) => {
+    const submit = (e) => {
         e.preventDefault();
-
-        if (processing) return; // 🚫 evita doble envío
+        if (processing) return;
 
         post(route("admin.products.store"), {
             forceFormData: true,
             preserveScroll: true,
-            onError: (errors) => {
-                console.log("ERRORES BACKEND:", errors);
-            }
+            onError: () => {},
         });
-
-    }, [processing]);
-
-    console.log(data);
+    };
 
     return (
         <AdminLayout>
-            <Head title="Crear Producto" />
+            <Head title="Nuevo producto" />
 
             <div className="space-y-8">
-
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        Crear Nuevo Producto
-                    </h1>
-                    <p className="text-gray-500 mt-2">
-                        Complete la información del producto para agregarlo al catálogo.
-                    </p>
-                </div>
+                <AdminPageHeader
+                    eyebrow="Productos"
+                    title="Nuevo producto"
+                    description="Completá la información del producto, revisá las imágenes antes de guardar y dejá la ficha lista para el catálogo."
+                />
 
                 <ProductForm
                     data={data}
@@ -80,7 +69,7 @@ export default function Create({ categories }) {
                     processing={processing}
                     errors={errors}
                     categories={categories}
-                    buttonText="Crear Producto"
+                    buttonText="Guardar producto"
                 />
 
             </div>

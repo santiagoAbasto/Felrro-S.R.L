@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+    AdminFileField,
+    AdminSectionCard,
+    AdminTextInput,
+    AdminToggle,
+} from "@/Components/Admin/FormElements";
 
 export default function Form({
     data,
@@ -8,305 +13,128 @@ export default function Form({
     submit,
     existingFile = null,
     existingLogo = null,
-    buttonText = "Guardar"
+    buttonText = "Guardar",
 }) {
-
-    const [logoPreview, setLogoPreview] = useState(existingLogo);
-    const [fileName, setFileName] = useState(null);
-    const [fileSize, setFileSize] = useState(null);
-
-    /* ================= LOGO PREVIEW ================= */
-
-    useEffect(() => {
-        setLogoPreview(existingLogo);
-    }, [existingLogo]);
-
-    const handleLogoChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setData("image_logo", file);
-        setLogoPreview(URL.createObjectURL(file));
-    };
-
-    /* ================= FILE HANDLER ================= */
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setData("file", file);
-
-        setFileName(file.name);
-
-        const sizeKB = (file.size / 1024).toFixed(0);
-        setFileSize(`${sizeKB} KB`);
-
-        setData("format", file.type.includes("pdf") ? "PDF" : "");
-        setData("weight", `${sizeKB} KB`);
-    };
-
-    /* ================= ORDER UPPERCASE ================= */
-
-    const handleOrderChange = (e) => {
-        setData("order", e.target.value.toUpperCase());
-    };
-
-    const inputStyle =
-        "w-full h-11 px-4 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 placeholder-gray-400 transition focus:outline-none focus:ring-2 focus:ring-[#25A7CA]/30 focus:border-[#25A7CA]";
-
-    const sectionStyle =
-        "bg-white p-10 rounded-xl border border-gray-200 shadow-sm space-y-8";
-
     return (
-        <form onSubmit={submit} className="space-y-12">
-
-            {/* =======================================================
-               INFORMACIÓN GENERAL
-            ======================================================= */}
-
-            <div className={sectionStyle}>
-
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Información del Certificado
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Nombre (ES)
-                        </label>
-                        <input
-                            type="text"
-                            autoComplete="off"
-                            value={data.name.es}
-                            onChange={e =>
-                                setData("name", { ...data.name, es: e.target.value })
-                            }
-                            className={inputStyle}
-                        />
-                        {errors["name.es"] && (
-                            <p className="text-xs text-red-500 mt-1">
-                                {errors["name.es"]}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Nombre (EN)
-                        </label>
-                        <input
-                            type="text"
-                            autoComplete="off"
-                            value={data.name.en}
-                            onChange={e =>
-                                setData("name", { ...data.name, en: e.target.value })
-                            }
-                            className={inputStyle}
-                        />
-                        {errors["name.en"] && (
-                            <p className="text-xs text-red-500 mt-1">
-                                {errors["name.en"]}
-                            </p>
-                        )}
-                    </div>
-
-                </div>
-
-                {/* ORDEN */}
-
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Orden (Sistema tipo Excel)
-                    </label>
-
-                    <input
-                        type="text"
-                        value={data.order}
-                        onChange={handleOrderChange}
-                        className={`${inputStyle} uppercase tracking-widest`}
-                        placeholder="Ej: A, AA, AB..."
-                        maxLength={5}
+        <form onSubmit={submit} className="space-y-8">
+            <AdminSectionCard
+                title="Información del certificado"
+                description="Completá un nombre claro y un orden simple para ubicarlo dentro del listado."
+            >
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <AdminTextInput
+                        label="Nombre"
+                        value={data.name.es}
+                        onChange={(value) => setData("name", { ...data.name, es: value })}
+                        placeholder="Ej: Certificación ISO 9001"
+                        error={errors["name.es"]}
                     />
-
-                    {errors.order && (
-                        <p className="text-xs text-red-500 mt-1">
-                            {errors.order}
-                        </p>
-                    )}
-
-                    <p className="text-xs text-gray-500 mt-2">
-                        Se ordena alfabéticamente (A → AA → AB → B...)
-                    </p>
+                    <AdminTextInput
+                        label="Nombre en inglés"
+                        value={data.name.en}
+                        onChange={(value) => setData("name", { ...data.name, en: value })}
+                        placeholder="Versión en inglés"
+                        error={errors["name.en"]}
+                        optional
+                    />
                 </div>
 
-            </div>
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <AdminTextInput
+                        label="Orden"
+                        value={data.order}
+                        onChange={(value) => setData("order", value.toUpperCase())}
+                        placeholder="Ej: A, AA o AB"
+                        hint="Se usa para acomodar los certificados en el listado."
+                        error={errors.order}
+                    />
+                    <AdminToggle
+                        label="Mostrar certificado en la web"
+                        hint="Si lo desactivás, queda guardado pero no se muestra."
+                        checked={data.is_active}
+                        onChange={(value) => setData("is_active", value)}
+                    />
+                </div>
+            </AdminSectionCard>
 
-
-            {/* =======================================================
-               DOCUMENTO PDF
-            ======================================================= */}
-
-            <div className={sectionStyle}>
-
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Documento PDF
-                </h2>
-
-                {existingFile && !data.file && (
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center text-sm">
-                        <span className="text-gray-600">
-                            Archivo actual
-                        </span>
-                        <a
-                            href={`/storage/${existingFile}`}
-                            target="_blank"
-                            className="text-[#25A7CA] font-medium hover:underline"
-                        >
-                            Ver documento
-                        </a>
-                    </div>
-                )}
-
-                <input
-                    type="file"
+            <AdminSectionCard
+                title="Archivo del certificado"
+                description="Subí el documento oficial. El sistema te muestra el archivo actual si ya había uno cargado."
+                tone="accent"
+            >
+                <AdminFileField
+                    label="Documento"
+                    value={data.file}
+                    onChange={(file) => {
+                        setData("file", file);
+                        if (file) {
+                            const sizeKB = Math.round(file.size / 1024);
+                            setData("format", file.type.includes("pdf") ? "PDF" : file.name.split(".").pop()?.toUpperCase() || "");
+                            setData("weight", `${sizeKB} KB`);
+                        }
+                    }}
                     accept="application/pdf"
-                    onChange={handleFileChange}
-                    className={inputStyle}
+                    maxSizeMB={15}
+                    currentUrl={existingFile ? `/storage/${existingFile}` : null}
+                    currentLabel={existingFile ? "Documento actual cargado" : null}
+                    hint="Actualmente se admite PDF. El tamaño máximo es 15 MB."
+                    error={errors.file}
+                    kind="document"
+                    buttonLabel="Seleccionar PDF"
                 />
+            </AdminSectionCard>
 
-                {fileName && (
-                    <div className="text-sm text-gray-600">
-                        <strong>{fileName}</strong>
-                        {fileSize && <span> • {fileSize}</span>}
-                    </div>
-                )}
-
-                <p className="text-xs text-gray-500">
-                    Solo archivos PDF. Máximo 15MB.
-                </p>
-
-                {errors.file && (
-                    <p className="text-xs text-red-500">
-                        {errors.file}
-                    </p>
-                )}
-
-            </div>
-
-
-            {/* =======================================================
-               LOGO
-            ======================================================= */}
-
-            <div className={sectionStyle}>
-
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Logo del Certificado (Opcional)
-                </h2>
-
-                {logoPreview && (
-                    <div className="flex items-center gap-6">
-                        <img
-                            src={logoPreview}
-                            alt="Logo preview"
-                            className="w-32 h-20 object-contain bg-gray-50 p-3 rounded-lg border border-gray-200"
-                        />
-                    </div>
-                )}
-
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoChange}
-                    className={inputStyle}
+            <AdminSectionCard
+                title="Logo del certificado"
+                description="Este logo acompaña al documento en la parte pública. Podés dejarlo vacío si no hace falta."
+            >
+                <AdminFileField
+                    label="Logo"
+                    value={data.image_logo}
+                    onChange={(file) => setData("image_logo", file)}
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    maxSizeMB={15}
+                    currentUrl={existingLogo}
+                    currentLabel={existingLogo ? "Logo actual cargado" : null}
+                    hint="Conviene usar una imagen limpia, preferentemente con fondo transparente."
+                    error={errors.image_logo}
+                    optional
                 />
+            </AdminSectionCard>
 
-                {errors.image_logo && (
-                    <p className="text-xs text-red-500">
-                        {errors.image_logo}
-                    </p>
-                )}
-
-            </div>
-
-
-            {/* =======================================================
-               INFORMACIÓN TÉCNICA
-            ======================================================= */}
-
-            <div className={sectionStyle}>
-
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Información Técnica
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Formato
-                        </label>
-                        <input
-                            type="text"
-                            value={data.format || ""}
-                            onChange={e => setData("format", e.target.value)}
-                            className={inputStyle}
-                            placeholder="PDF"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Peso
-                        </label>
-                        <input
-                            type="text"
-                            value={data.weight || ""}
-                            onChange={e => setData("weight", e.target.value)}
-                            className={inputStyle}
-                            placeholder="Ej: 340 KB"
-                        />
-                    </div>
-
+            <AdminSectionCard
+                title="Datos de referencia"
+                description="Estos datos se completan de forma automática al elegir el archivo, pero podés ajustarlos si lo necesitás."
+            >
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <AdminTextInput
+                        label="Formato"
+                        value={data.format || ""}
+                        onChange={(value) => setData("format", value)}
+                        placeholder="PDF"
+                        error={errors.format}
+                        optional
+                    />
+                    <AdminTextInput
+                        label="Peso"
+                        value={data.weight || ""}
+                        onChange={(value) => setData("weight", value)}
+                        placeholder="Ej: 850 KB"
+                        error={errors.weight}
+                        optional
+                    />
                 </div>
+            </AdminSectionCard>
 
-            </div>
-
-
-            {/* =======================================================
-               ACTIVO
-            ======================================================= */}
-
-            <div className="flex items-center gap-3">
-                <input
-                    type="checkbox"
-                    checked={data.is_active}
-                    onChange={e => setData("is_active", e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 focus:ring-[#25A7CA]"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                    Certificado activo
-                </span>
-            </div>
-
-
-            {/* =======================================================
-               BOTÓN
-            ======================================================= */}
-
-            <div>
+            <div className="flex justify-end">
                 <button
                     type="submit"
                     disabled={processing}
-                    className="inline-flex items-center justify-center px-6 h-11 rounded-lg bg-[#25A7CA] text-white text-sm font-semibold transition hover:bg-[#1F8EA8] disabled:opacity-50"
+                    className="inline-flex items-center rounded-2xl bg-[#25A7CA] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
                 >
                     {processing ? "Guardando..." : buttonText}
                 </button>
             </div>
-
         </form>
     );
 }

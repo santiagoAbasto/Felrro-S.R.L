@@ -1,165 +1,156 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import { useState } from "react";
 import Toast from "@/Components/Toast";
+import {
+    AdminPageHeader,
+    AdminRichTextarea,
+    AdminSectionCard,
+    AdminTextInput,
+} from "@/Components/Admin/FormElements";
 
 export default function Index({ subscribers, filters, activeCount }) {
-
     const { flash } = usePage().props;
+    const [search, setSearch] = useState(filters.search || "");
 
-    const [search, setSearch] = useState(filters.search || '');
-
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         subject: "",
-        message: ""
+        message: "",
     });
 
-    const submitSearch = (e) => {
-        e.preventDefault();
-        router.get(route('admin.newsletter.index'), { search }, { preserveState: true });
+    const submitSearch = (event) => {
+        event.preventDefault();
+        router.get(route("admin.newsletter.index"), { search }, { preserveState: true });
     };
 
     const toggle = (id) => {
-        router.patch(route('admin.newsletter.toggle', id));
+        router.patch(route("admin.newsletter.toggle", id));
     };
 
     const destroy = (id) => {
-        if(confirm("¿Eliminar suscriptor?")){
-            router.delete(route('admin.newsletter.destroy', id));
+        if (confirm("¿Querés eliminar este suscriptor?")) {
+            router.delete(route("admin.newsletter.destroy", id));
         }
     };
 
-    const sendNewsletter = (e) => {
-        e.preventDefault();
+    const sendNewsletter = (event) => {
+        event.preventDefault();
         post(route("admin.newsletter.store"));
     };
 
     return (
         <AdminLayout>
             <Head title="Newsletter" />
-
-            {/* TOAST */}
             <Toast message={flash.success} type="success" />
 
-            <div className="p-10 space-y-8">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Newsletter"
+                    title="Suscriptores y envíos"
+                    description="Desde esta pantalla podés preparar un envío y revisar quiénes están activos para recibirlo."
+                />
 
-                <h1 className="text-2xl font-bold">Newsletter</h1>
+                <AdminSectionCard
+                    title="Nuevo envío"
+                    description={`El mensaje se enviará a ${activeCount} suscriptor${activeCount === 1 ? "" : "es"} activo${activeCount === 1 ? "" : "s"}.`}
+                >
+                    <form onSubmit={sendNewsletter} className="space-y-6">
+                        <AdminTextInput
+                            label="Asunto"
+                            value={data.subject}
+                            onChange={(value) => setData("subject", value)}
+                            placeholder="Ej: Novedades de este mes"
+                            error={errors.subject}
+                        />
 
-                {/* FORM */}
-                <div className="bg-white shadow rounded-xl p-8 space-y-6">
-
-                    <h2 className="text-lg font-semibold">
-                        Enviar Newsletter
-                    </h2>
-
-                    <form onSubmit={sendNewsletter} className="space-y-4">
-
-                        <div>
-                            <label className="block text-sm font-medium mb-2">
-                                Asunto *
-                            </label>
-                            <input
-                                type="text"
-                                value={data.subject}
-                                onChange={(e) => setData("subject", e.target.value)}
-                                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#25A7CA] outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-2">
-                                Mensaje *
-                            </label>
-                            <textarea
-                                rows="6"
-                                value={data.message}
-                                onChange={(e) => setData("message", e.target.value)}
-                                className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#25A7CA] outline-none"
-                            />
-                        </div>
-
-                        <p className="text-sm text-gray-500">
-                            Se enviará a <strong>{activeCount}</strong> suscriptores activos.
-                        </p>
+                        <AdminRichTextarea
+                            label="Mensaje"
+                            value={data.message}
+                            onChange={(value) => setData("message", value)}
+                            placeholder="Escribí el contenido del envío con un tono claro y cercano."
+                            error={errors.message}
+                        />
 
                         <div className="flex justify-end gap-3">
                             <button
                                 type="button"
-                                onClick={() => setData({ subject:"", message:"" })}
-                                className="px-4 py-2 bg-gray-200 rounded-lg"
+                                onClick={() => setData({ subject: "", message: "" })}
+                                className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
                             >
-                                Cancelar
+                                Limpiar
                             </button>
-
                             <button
+                                type="submit"
                                 disabled={processing}
-                                className="px-6 py-2 bg-[#25A7CA] text-white rounded-lg hover:bg-[#1f95b3] transition"
+                                className="rounded-2xl bg-[#25A7CA] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
                             >
-                                {processing ? "Enviando..." : "Enviar Newsletter"}
+                                {processing ? "Enviando..." : "Enviar newsletter"}
                             </button>
                         </div>
-
                     </form>
-                </div>
+                </AdminSectionCard>
 
-                {/* BUSCADOR */}
-                <form onSubmit={submitSearch} className="flex gap-4">
-                    <input
-                        type="text"
-                        placeholder="Buscar por email o ID..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="border rounded-lg px-4 py-2 w-80"
-                    />
-                    <button className="bg-gray-800 text-white px-4 rounded-lg">
-                        Buscar
-                    </button>
-                </form>
+                <AdminSectionCard
+                    title="Suscriptores"
+                    description="Usá el buscador para encontrar rápido un correo o revisar el estado de un registro."
+                >
+                    <form onSubmit={submitSearch} className="flex flex-col gap-3 md:flex-row">
+                        <input
+                            type="text"
+                            placeholder="Buscar por correo o número de registro"
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#25A7CA] focus:ring-4 focus:ring-[#25A7CA]/10 md:max-w-md"
+                        />
+                        <button className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                            Buscar
+                        </button>
+                    </form>
 
-                {/* TABLA */}
-                <div className="bg-white shadow rounded-xl overflow-hidden">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-100 text-left">
-                            <tr>
-                                <th className="p-4">ID</th>
-                                <th>Email</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {subscribers.data.map(sub => (
-                                <tr key={sub.id} className="border-t">
-                                    <td className="p-4">{sub.id}</td>
-                                    <td>{sub.email}</td>
-                                    <td>
-                                        <button
-                                            onClick={() => toggle(sub.id)}
-                                            className={`px-3 py-1 rounded-full text-xs ${
-                                                sub.is_active
-                                                    ? "bg-blue-100 text-blue-600"
-                                                    : "bg-gray-200 text-gray-600"
-                                            }`}
-                                        >
-                                            {sub.is_active ? "Activo" : "Inactivo"}
-                                        </button>
-                                    </td>
-                                    <td>
-                                        <button
-                                            onClick={() => destroy(sub.id)}
-                                            className="text-red-600"
-                                        >
-                                            🗑
-                                        </button>
-                                    </td>
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200">
+                        <table className="w-full text-sm">
+                            <thead className="bg-slate-50 text-left text-slate-500">
+                                <tr>
+                                    <th className="px-4 py-3">N°</th>
+                                    <th className="px-4 py-3">Correo</th>
+                                    <th className="px-4 py-3">Estado</th>
+                                    <th className="px-4 py-3">Acciones</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                                {subscribers.data.map((sub) => (
+                                    <tr key={sub.id}>
+                                        <td className="px-4 py-3 text-slate-500">{sub.id}</td>
+                                        <td className="px-4 py-3 font-medium text-slate-700">{sub.email}</td>
+                                        <td className="px-4 py-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggle(sub.id)}
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    sub.is_active
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : "bg-slate-200 text-slate-500"
+                                                }`}
+                                            >
+                                                {sub.is_active ? "Activo" : "Pausado"}
+                                            </button>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => destroy(sub.id)}
+                                                className="text-sm font-semibold text-red-500 transition hover:text-red-600"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </AdminSectionCard>
             </div>
         </AdminLayout>
     );

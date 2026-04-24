@@ -20,12 +20,12 @@ export default function Toast({ message, type = "success" }) {
 
     return (
         <div
-            className={`fixed top-6 right-6 z-50 transition-all duration-500
-                ${visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}
+            className={`fixed top-6 right-6 z-50 transition-[opacity,transform] duration-180 ease-out will-change-[opacity,transform]
+                ${visible ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-[0.985]"}
             `}
         >
             <div className={`
-                px-6 py-4 rounded-xl shadow-lg text-white
+                rounded-xl px-6 py-4 text-white shadow-lg
                 ${type === "success" ? "bg-[#25A7CA]" : "bg-red-500"}
             `}>
                 {message}

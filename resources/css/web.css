@@ -150,16 +150,22 @@ body {
     white-space: nowrap;
 }
 
-/* Activo genérico: solo negrita, sin cambio de color */
+/* Activo genérico: misma señal visual en todas las secciones */
 .nav-links a.active {
+    color: var(--primary);
     font-weight: 700;
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    line-height: 150%;
 }
 
-/* Nosotros: hover y activo = negrita + #25A7CA */
+/* Nosotros mantiene el mismo comportamiento visual */
 .nav-links a.nav-nosotros:hover,
 .nav-links a.nav-nosotros.active {
     font-weight: 700;
-    color: #25A7CA;
+    color: var(--primary);
 }
 
 .nav-actions {
@@ -396,16 +402,22 @@ body {
     transition: color 0.2s;
 }
 
-/* Activo genérico mobile: solo negrita */
+/* Activo genérico mobile: misma señal visual en todas las secciones */
 .nav-mobile__links a.active {
+    color: var(--primary);
     font-weight: 700;
+    text-align: center;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    line-height: 150%;
 }
 
-/* Nosotros mobile: hover y activo = negrita + #25A7CA */
+/* Nosotros mobile mantiene el mismo comportamiento visual */
 .nav-mobile__links a.nav-nosotros:hover,
 .nav-mobile__links a.nav-nosotros.active {
     font-weight: 700;
-    color: #25A7CA;
+    color: var(--primary);
 }
 
 .nav-mobile__cta {
@@ -823,21 +835,21 @@ body {
 ================================================================ */
 
 .about-section {
-
     width: 100%;
-    max-width: 1366px;
+    max-width: none;
     margin: 0 auto;
 }
 
 .about-wrapper {
     width: 100%;
-    display: flex;
-    height: 567px;
+    display: grid;
+    grid-template-columns: minmax(360px, 47.5vw) minmax(0, 1fr);
+    min-height: 567px;
 }
 
 .about-image {
-    width: 645px;
-    height: 567px;
+    width: 100%;
+    min-height: 567px;
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -845,30 +857,37 @@ body {
 
 .about-content {
     background: #125A6D;
-    padding-left: 50px;
-    padding-right: 93px;
-    padding-bottom: 79px;
-    flex: 1;
-    height: 567px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
+    gap: 39px;
+    min-height: 567px;
+    padding-top: 72px;
+    padding-bottom: 72px;
+    padding-left: clamp(40px, 4vw, 56px);
+    padding-right: max(40px, calc((100vw - 1366px) / 2 + 71px));
+}
+
+.about-content > div {
+    width: 100%;
+    max-width: 720px;
 }
 
 .about-title {
-    padding-top: 78px;
     color: #FFFFFF;
     font-family: 'Montserrat', sans-serif;
     font-size: 32px;
     font-weight: 700;
-    line-height: 100%;
+    line-height: 1.08;
     margin: 0 0 23px 0;
+    overflow-wrap: anywhere;
 }
 
 .about-text {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: 100%;
 }
 
 .about-text p {
@@ -879,6 +898,8 @@ body {
     line-height: 150%;
     margin: 0;
     max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
 }
 
 .about-btn {
@@ -898,8 +919,10 @@ body {
     background: transparent;
     align-self: flex-start;
     transition: all 0.25s ease;
-    white-space: nowrap;
-    margin-top: 39px;
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
+    margin-top: 0;
 }
 
 .about-btn:hover {
@@ -2042,10 +2065,11 @@ body {
 ================================================================ */
 
 .newsletter-toast {
+    display: none;
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.985);
     background: #25A7CA;
     color: #fff;
     padding: 20px 36px;
@@ -2056,12 +2080,14 @@ body {
     font-weight: 500;
     text-align: center;
     opacity: 0;
-    transition: all 0.35s cubic-bezier(.2, .8, .2, 1);
+    transition: opacity 0.18s ease-out, transform 0.18s ease-out;
     z-index: 9999;
     pointer-events: none;
+    will-change: opacity, transform;
 }
 
 .newsletter-toast.show {
+    display: block;
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
 }

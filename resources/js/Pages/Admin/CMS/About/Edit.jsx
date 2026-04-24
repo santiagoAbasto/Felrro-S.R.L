@@ -1,19 +1,21 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { route } from "ziggy-js";
-import { useState } from "react";
+import {
+    AdminFileField,
+    AdminPageHeader,
+    AdminRichTextarea,
+    AdminSectionCard,
+    AdminTextInput,
+} from "@/Components/Admin/FormElements";
 
 export default function Edit({ page }) {
+    const main = page?.sections?.find((section) => section.type === "about_main") || {};
+    const metrics = page?.sections?.find((section) => section.type === "about_metrics") || {};
+    const valuesSection = page?.sections?.find((section) => section.type === "about_values") || {};
+    const video = page?.sections?.find((section) => section.type === "about_video") || {};
 
-    const main = page?.sections?.find(s => s.type === "about_main") || {};
-    const metrics = page?.sections?.find(s => s.type === "about_metrics") || {};
-    const valuesSection = page?.sections?.find(s => s.type === "about_values") || {};
-    const video = page?.sections?.find(s => s.type === "about_video") || {};
-
-    const [imagePreview, setImagePreview] = useState(null);
-    const [videoPreview, setVideoPreview] = useState(null);
-
-    const { data, setData, put, processing } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         main: {
             id: main.id,
             title: main.title ?? { es: "", en: "" },
@@ -21,351 +23,330 @@ export default function Edit({ page }) {
             image: null,
             existing_image: main.image ?? null,
         },
-
         metrics: {
             id: metrics.id,
             items: metrics.content?.items ?? [],
         },
-
         values: {
             id: valuesSection.id,
             mission: valuesSection.content?.mission ?? { es: "", en: "" },
             vision: valuesSection.content?.vision ?? { es: "", en: "" },
             values: valuesSection.content?.values ?? { es: "", en: "" },
         },
-
         video: {
             id: video.id,
             title: video.content?.title ?? { es: "", en: "" },
             url: video.content?.url ?? "",
             video_file: null,
             existing_video: video.content?.video_path ?? null,
-        }
+        },
     });
 
-    /* ================= IMAGE ================= */
-
-    const handleImageChange = (file) => {
-        if (!file) return;
-        setImagePreview(URL.createObjectURL(file));
-        setData("main", { ...data.main, image: file });
-    };
-
-    /* ================= VIDEO ================= */
-
-    const handleVideoFileChange = (file) => {
-        if (!file) return;
-        setVideoPreview(URL.createObjectURL(file));
-        setData("video", {
-            ...data.video,
-            video_file: file,
-            url: ""
-        });
-    };
-
-    const handleVideoUrlChange = (value) => {
-        setVideoPreview(null);
-        setData("video", {
-            ...data.video,
-            url: value,
-            video_file: null
-        });
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
         put(route("admin.about.update"), { forceFormData: true });
     };
 
     return (
         <AdminLayout>
-            <Head title="Editar Página Nosotros" />
+            <Head title="Nosotros" />
 
-            <div className="p-10 bg-gray-50 min-h-screen">
-                <div className="max-w-6xl mx-auto space-y-16">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Nosotros"
+                    title="Página institucional"
+                    description="Desde acá podés editar los bloques principales de la página Nosotros sin usar lenguaje técnico. Todo queda con vista previa antes de guardar."
+                />
 
-                    <h1 className="text-3xl font-bold">
-                        Página Nosotros
-                    </h1>
-
-                    <form onSubmit={submit} className="space-y-16">
-
-                        {/* ================= MAIN ================= */}
-                        <Section title="Sección Principal">
-
-                            <LangInput
-                                label="Título ES"
+                <form onSubmit={submit} className="space-y-8">
+                    <AdminSectionCard
+                        title="Presentación principal"
+                        description="Es la parte inicial de la página, donde contás quiénes son y qué hace la empresa."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Título principal"
                                 value={data.main.title.es}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("main", {
                                         ...data.main,
-                                        title: { ...data.main.title, es: val }
+                                        title: { ...data.main.title, es: value },
                                     })
                                 }
+                                placeholder="Ej: Trayectoria, calidad y compromiso"
+                                error={errors["main.title.es"]}
                             />
-
-                            <LangInput
-                                label="Title EN"
+                            <AdminTextInput
+                                label="Título en inglés"
                                 value={data.main.title.en}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("main", {
                                         ...data.main,
-                                        title: { ...data.main.title, en: val }
+                                        title: { ...data.main.title, en: value },
                                     })
                                 }
+                                placeholder="Versión en inglés"
+                                error={errors["main.title.en"]}
+                                optional
                             />
+                        </div>
 
-                            <LangTextarea
-                                label="Contenido ES"
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Descripción principal"
                                 value={data.main.content.es}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("main", {
                                         ...data.main,
-                                        content: { ...data.main.content, es: val }
+                                        content: { ...data.main.content, es: value },
                                     })
                                 }
+                                placeholder="Contá la historia, propuesta y experiencia de Felrro."
+                                error={errors["main.content.es"]}
                             />
-
-                            <LangTextarea
-                                label="Content EN"
+                            <AdminRichTextarea
+                                label="Descripción principal en inglés"
                                 value={data.main.content.en}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("main", {
                                         ...data.main,
-                                        content: { ...data.main.content, en: val }
+                                        content: { ...data.main.content, en: value },
                                     })
                                 }
+                                placeholder="Versión en inglés"
+                                error={errors["main.content.en"]}
+                                optional
                             />
+                        </div>
 
-                            <div>
-                                <label className="font-medium">Imagen Principal</label>
+                        <AdminFileField
+                            label="Imagen principal"
+                            value={data.main.image}
+                            onChange={(file) => setData("main", { ...data.main, image: file })}
+                            accept="image/png,image/jpeg,image/webp"
+                            maxSizeMB={5}
+                            currentUrl={data.main.existing_image ? `/storage/${data.main.existing_image}` : null}
+                            currentLabel="Imagen actual de la sección"
+                            hint="Elegí una imagen horizontal, clara y representativa."
+                            error={errors["main.image"]}
+                        />
+                    </AdminSectionCard>
 
-                                {(imagePreview || data.main.existing_image) && (
-                                    <img
-                                        src={
-                                            imagePreview
-                                                ? imagePreview
-                                                : `/storage/${data.main.existing_image}`
-                                        }
-                                        className="w-full max-w-md rounded-xl mt-4"
-                                    />
-                                )}
-
-                                <input
-                                    type="file"
-                                    className="mt-4"
-                                    onChange={(e) =>
-                                        handleImageChange(e.target.files[0])
-                                    }
-                                />
-                            </div>
-
-                        </Section>
-
-                        {/* ================= METRICS ================= */}
-                        <Section title="Métricas">
-
+                    <AdminSectionCard
+                        title="Métricas o destacados"
+                        description="Estos números ayudan a resumir trayectoria, capacidad o cobertura. Mantené textos breves para que se lean fácil."
+                        tone="soft"
+                    >
+                        <div className="space-y-5">
                             {data.metrics.items.map((item, index) => (
-                                <div key={index} className="grid grid-cols-3 gap-4">
-
-                                    <input
-                                        className="border p-3 rounded"
+                                <div key={index} className="grid gap-4 rounded-[24px] border border-slate-200 bg-white p-4 lg:grid-cols-3">
+                                    <AdminTextInput
+                                        label={`Valor ${index + 1}`}
                                         value={item.value}
-                                        onChange={(e) => {
+                                        onChange={(value) => {
                                             const updated = [...data.metrics.items];
-                                            updated[index].value = e.target.value;
-                                            setData("metrics", {
-                                                ...data.metrics,
-                                                items: updated
-                                            });
+                                            updated[index].value = value;
+                                            setData("metrics", { ...data.metrics, items: updated });
                                         }}
+                                        placeholder="Ej: +40"
                                     />
-
-                                    <input
-                                        className="border p-3 rounded"
-                                        value={item.label.es}
-                                        onChange={(e) => {
+                                    <AdminTextInput
+                                        label={`Etiqueta ${index + 1}`}
+                                        value={item.label?.es ?? ""}
+                                        onChange={(value) => {
                                             const updated = [...data.metrics.items];
-                                            updated[index].label.es = e.target.value;
-                                            setData("metrics", {
-                                                ...data.metrics,
-                                                items: updated
-                                            });
+                                            updated[index].label = { ...(updated[index].label ?? {}), es: value };
+                                            setData("metrics", { ...data.metrics, items: updated });
                                         }}
+                                        placeholder="Ej: años de trayectoria"
                                     />
-
-                                    <input
-                                        className="border p-3 rounded"
-                                        value={item.label.en}
-                                        onChange={(e) => {
+                                    <AdminTextInput
+                                        label={`Etiqueta ${index + 1} en inglés`}
+                                        value={item.label?.en ?? ""}
+                                        onChange={(value) => {
                                             const updated = [...data.metrics.items];
-                                            updated[index].label.en = e.target.value;
-                                            setData("metrics", {
-                                                ...data.metrics,
-                                                items: updated
-                                            });
+                                            updated[index].label = { ...(updated[index].label ?? {}), en: value };
+                                            setData("metrics", { ...data.metrics, items: updated });
                                         }}
+                                        placeholder="Versión en inglés"
+                                        optional
                                     />
                                 </div>
                             ))}
+                        </div>
+                    </AdminSectionCard>
 
-                        </Section>
-
-                        {/* ================= VALUES ================= */}
-                        <Section title="Misión / Visión / Valores">
-
-                            <LangTextarea
-                                label="Misión ES"
+                    <AdminSectionCard
+                        title="Misión, visión y valores"
+                        description="Usá frases claras, concretas y fáciles de entender. La vista previa te ayuda a revisar el tono antes de publicar."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Misión"
                                 value={data.values.mission.es}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("values", {
                                         ...data.values,
-                                        mission: { ...data.values.mission, es: val }
+                                        mission: { ...data.values.mission, es: value },
                                     })
                                 }
+                                placeholder="¿Cuál es el propósito de la empresa?"
+                                error={errors["values.mission.es"]}
                             />
-
-                            <LangTextarea
-                                label="Mission EN"
+                            <AdminRichTextarea
+                                label="Misión en inglés"
                                 value={data.values.mission.en}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("values", {
                                         ...data.values,
-                                        mission: { ...data.values.mission, en: val }
+                                        mission: { ...data.values.mission, en: value },
                                     })
                                 }
+                                placeholder="Versión en inglés"
+                                error={errors["values.mission.en"]}
+                                optional
                             />
+                        </div>
 
-                            <LangTextarea
-                                label="Visión ES"
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Visión"
                                 value={data.values.vision.es}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("values", {
                                         ...data.values,
-                                        vision: { ...data.values.vision, es: val }
+                                        vision: { ...data.values.vision, es: value },
                                     })
                                 }
+                                placeholder="¿Hacia dónde quiere crecer la empresa?"
+                                error={errors["values.vision.es"]}
                             />
-
-                            <LangTextarea
-                                label="Vision EN"
+                            <AdminRichTextarea
+                                label="Visión en inglés"
                                 value={data.values.vision.en}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("values", {
                                         ...data.values,
-                                        vision: { ...data.values.vision, en: val }
+                                        vision: { ...data.values.vision, en: value },
                                     })
                                 }
+                                placeholder="Versión en inglés"
+                                error={errors["values.vision.en"]}
+                                optional
                             />
+                        </div>
 
-                            <LangTextarea
-                                label="Valores ES"
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Valores"
                                 value={data.values.values.es}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("values", {
                                         ...data.values,
-                                        values: { ...data.values.values, es: val }
+                                        values: { ...data.values.values, es: value },
                                     })
                                 }
+                                placeholder="Podés usar una lista simple con un valor por línea."
+                                error={errors["values.values.es"]}
                             />
-
-                            <LangTextarea
-                                label="Values EN"
+                            <AdminRichTextarea
+                                label="Valores en inglés"
                                 value={data.values.values.en}
-                                onChange={(val) =>
+                                onChange={(value) =>
                                     setData("values", {
                                         ...data.values,
-                                        values: { ...data.values.values, en: val }
+                                        values: { ...data.values.values, en: value },
                                     })
                                 }
+                                placeholder="Versión en inglés"
+                                error={errors["values.values.en"]}
+                                optional
                             />
+                        </div>
+                    </AdminSectionCard>
 
-                        </Section>
-
-                        {/* ================= VIDEO ================= */}
-                        <Section title="Video">
-
-                            <input
-                                type="text"
-                                className="w-full border p-3 rounded"
-                                placeholder="URL YouTube"
-                                value={data.video.url}
-                                onChange={(e) =>
-                                    handleVideoUrlChange(e.target.value)
+                    <AdminSectionCard
+                        title="Video o enlace"
+                        description="Podés mantener un enlace externo o subir un archivo propio. Si subís un archivo, el panel te muestra una vista previa."
+                        tone="accent"
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Título del bloque"
+                                value={data.video.title.es}
+                                onChange={(value) =>
+                                    setData("video", {
+                                        ...data.video,
+                                        title: { ...data.video.title, es: value },
+                                    })
                                 }
+                                placeholder="Ej: Conocé nuestra planta"
+                                error={errors["video.title.es"]}
+                                optional
                             />
-
-                            {(videoPreview || data.video.existing_video) && (
-                                <video
-                                    src={
-                                        videoPreview
-                                            ? videoPreview
-                                            : `/storage/${data.video.existing_video}`
-                                    }
-                                    controls
-                                    className="w-full max-w-lg mt-4 rounded"
-                                />
-                            )}
-
-                            <input
-                                type="file"
-                                className="mt-4"
-                                onChange={(e) =>
-                                    handleVideoFileChange(e.target.files[0])
+                            <AdminTextInput
+                                label="Título del bloque en inglés"
+                                value={data.video.title.en}
+                                onChange={(value) =>
+                                    setData("video", {
+                                        ...data.video,
+                                        title: { ...data.video.title, en: value },
+                                    })
                                 }
+                                placeholder="Versión en inglés"
+                                error={errors["video.title.en"]}
+                                optional
                             />
+                        </div>
 
-                        </Section>
+                        <AdminTextInput
+                            label="Enlace del video"
+                            value={data.video.url}
+                            onChange={(value) =>
+                                setData("video", {
+                                    ...data.video,
+                                    url: value,
+                                    video_file: null,
+                                })
+                            }
+                            placeholder="Pegá acá el enlace de YouTube o Vimeo"
+                            error={errors["video.url"]}
+                            optional
+                        />
 
+                        <AdminFileField
+                            label="Archivo de video"
+                            value={data.video.video_file}
+                            onChange={(file) =>
+                                setData("video", {
+                                    ...data.video,
+                                    video_file: file,
+                                    url: "",
+                                })
+                            }
+                            accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                            maxSizeMB={50}
+                            currentUrl={data.video.existing_video ? `/storage/${data.video.existing_video}` : null}
+                            currentLabel="Video actual cargado en la sección"
+                            hint="Si elegís un archivo nuevo, reemplaza al actual al guardar."
+                            error={errors["video.video_file"]}
+                            kind="video"
+                            optional
+                            buttonLabel="Seleccionar video"
+                        />
+                    </AdminSectionCard>
+
+                    <div className="flex justify-end">
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-blue-600 text-white py-3 rounded-xl"
+                            className="inline-flex items-center rounded-2xl bg-[#25A7CA] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
                         >
-                            Guardar Cambios
+                            {processing ? "Guardando cambios..." : "Guardar cambios"}
                         </button>
-
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </AdminLayout>
-    );
-}
-
-/* ================= UI HELPERS ================= */
-
-function Section({ title, children }) {
-    return (
-        <div className="bg-white p-10 rounded-2xl shadow space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-3">{title}</h2>
-            {children}
-        </div>
-    );
-}
-
-function LangInput({ label, value, onChange }) {
-    return (
-        <div>
-            <label className="block mb-2 font-medium">{label}</label>
-            <input
-                className="w-full border p-3 rounded"
-                value={value ?? ""}
-                onChange={(e) => onChange(e.target.value)}
-            />
-        </div>
-    );
-}
-
-function LangTextarea({ label, value, onChange }) {
-    return (
-        <div>
-            <label className="block mb-2 font-medium">{label}</label>
-            <textarea
-                rows={5}
-                className="w-full border p-3 rounded"
-                value={value ?? ""}
-                onChange={(e) => onChange(e.target.value)}
-            />
-        </div>
     );
 }

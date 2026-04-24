@@ -1,14 +1,16 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { Icon } from "@iconify/react";
-import { useState } from "react";
+import { route } from "ziggy-js";
+import {
+    AdminFileField,
+    AdminPageHeader,
+    AdminRichTextarea,
+    AdminSectionCard,
+    AdminTextInput,
+    AdminToggle,
+} from "@/Components/Admin/FormElements";
 
 export default function Edit({ section }) {
-
-    const [preview, setPreview] = useState(
-        section?.image ? `/storage/${section.image}` : null
-    );
-
     const { data, setData, post, processing, errors } = useForm({
         _method: "put",
         title: section?.title ?? { es: "", en: "" },
@@ -18,233 +20,140 @@ export default function Edit({ section }) {
         is_active: section?.is_active ?? true,
     });
 
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
         post(route("admin.cms.calidad.update"), {
-            forceFormData: true
+            forceFormData: true,
         });
-    };
-
-    const handleImage = (file) => {
-        setData("image", file);
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => setPreview(reader.result);
-            reader.readAsDataURL(file);
-        }
     };
 
     return (
         <AdminLayout>
-            <Head title="Editar Calidad" />
+            <Head title="Calidad" />
 
-            <div className="p-10 bg-gray-50 min-h-screen">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Calidad"
+                    title="Contenido principal de Calidad"
+                    description="Acá editás el bloque superior de la página Calidad. Los certificados y sus archivos se gestionan por separado."
+                    actions={[
+                        <Link
+                            key="list"
+                            href={route("admin.certificates.index")}
+                            className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                        >
+                            Ver certificados
+                        </Link>,
+                        <Link
+                            key="create"
+                            href={route("admin.certificates.create")}
+                            className="rounded-2xl bg-[#25A7CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d96b8]"
+                        >
+                            Nuevo certificado
+                        </Link>,
+                    ]}
+                />
 
-                {/* HEADER */}
-                <div className="mb-10">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        Editar Sección Calidad
-                    </h1>
-                    <p className="text-gray-500 mt-2">
-                        Gestiona el bloque principal de la página pública de Calidad.
-                    </p>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Certificados de Calidad
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-1 max-w-2xl">
-                                Los logos y archivos PDF que se muestran en la parte pública se gestionan desde el módulo de certificados.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3">
-                            <Link
-                                href={route("admin.certificates.index")}
-                                className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
-                            >
-                                Ver certificados
-                            </Link>
-                            <Link
-                                href={route("admin.certificates.create")}
-                                className="px-5 py-2.5 bg-[#25A7CA] hover:bg-[#1f8ea8] text-white rounded-xl shadow-sm transition"
-                            >
-                                Nuevo certificado
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                <form onSubmit={submit} className="space-y-10">
-
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-10">
-
-                        {/* ================= TITULOS ================= */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                                Títulos
-                            </h2>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Título (ES)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="mt-2 w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        value={data.title.es}
-                                        onChange={(e)=>setData("title",{...data.title, es:e.target.value})}
-                                    />
-                                    {errors["title.es"] && (
-                                        <p className="text-red-500 text-sm mt-1">{errors["title.es"]}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Título (EN)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="mt-2 w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        value={data.title.en}
-                                        onChange={(e)=>setData("title",{...data.title, en:e.target.value})}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ================= INTRO ================= */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                                Introducción
-                            </h2>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Intro (ES)
-                                    </label>
-                                    <textarea
-                                        rows="4"
-                                        className="mt-2 w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        value={data.subtitle.es}
-                                        onChange={(e)=>setData("subtitle",{...data.subtitle, es:e.target.value})}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Intro (EN)
-                                    </label>
-                                    <textarea
-                                        rows="4"
-                                        className="mt-2 w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        value={data.subtitle.en}
-                                        onChange={(e)=>setData("subtitle",{...data.subtitle, en:e.target.value})}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ================= POLITICAS ================= */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                                Políticas / Lista
-                            </h2>
-
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Políticas (ES)
-                                    </label>
-                                    <textarea
-                                        rows="8"
-                                        className="mt-2 w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        value={data.content.es}
-                                        onChange={(e)=>setData("content",{...data.content, es:e.target.value})}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Policies (EN)
-                                    </label>
-                                    <textarea
-                                        rows="8"
-                                        className="mt-2 w-full border rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                        value={data.content.en}
-                                        onChange={(e)=>setData("content",{...data.content, en:e.target.value})}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ================= IMAGEN ================= */}
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                                Imagen lateral
-                            </h2>
-
-                            <div className="flex items-center gap-8">
-                                {preview && (
-                                    <img
-                                        src={preview}
-                                        className="w-44 h-44 object-cover rounded-xl border"
-                                    />
-                                )}
-
-                                <div>
-                                    <input
-                                        type="file"
-                                        onChange={(e)=>handleImage(e.target.files[0])}
-                                        className="text-sm"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Máximo 5MB • JPG, PNG o WEBP
-                                    </p>
-                                </div>
-                            </div>
-
-                            {errors.image && (
-                                <p className="text-red-500 text-sm mt-2">{errors.image}</p>
-                            )}
-                        </div>
-
-                        {/* ================= TOGGLE ================= */}
-                        <div className="flex items-center gap-3 pt-6 border-t">
-                            <input
-                                type="checkbox"
-                                checked={data.is_active}
-                                onChange={(e)=>setData("is_active", e.target.checked)}
-                                className="w-5 h-5"
+                <form onSubmit={submit} className="space-y-8">
+                    <AdminSectionCard
+                        title="Texto del encabezado"
+                        description="Usá un mensaje breve y claro para presentar la política de calidad."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Título"
+                                value={data.title.es}
+                                onChange={(value) => setData("title", { ...data.title, es: value })}
+                                placeholder="Ej: Calidad certificada"
+                                error={errors["title.es"]}
                             />
-                            <span className="text-sm font-medium text-gray-700">
-                                Sección activa
-                            </span>
+                            <AdminTextInput
+                                label="Título en inglés"
+                                value={data.title.en}
+                                onChange={(value) => setData("title", { ...data.title, en: value })}
+                                placeholder="Versión en inglés"
+                                error={errors["title.en"]}
+                                optional
+                            />
                         </div>
 
-                    </div>
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Introducción"
+                                value={data.subtitle.es}
+                                onChange={(value) => setData("subtitle", { ...data.subtitle, es: value })}
+                                placeholder="Explicá en pocas líneas el enfoque de calidad."
+                                error={errors["subtitle.es"]}
+                            />
+                            <AdminRichTextarea
+                                label="Introducción en inglés"
+                                value={data.subtitle.en}
+                                onChange={(value) => setData("subtitle", { ...data.subtitle, en: value })}
+                                placeholder="Versión en inglés"
+                                error={errors["subtitle.en"]}
+                                optional
+                            />
+                        </div>
+                    </AdminSectionCard>
 
-                    {/* BOTON GUARDAR */}
+                    <AdminSectionCard
+                        title="Puntos o políticas"
+                        description="Podés escribir un párrafo o usar una lista con un punto por línea."
+                        tone="accent"
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Contenido"
+                                value={data.content.es}
+                                onChange={(value) => setData("content", { ...data.content, es: value })}
+                                placeholder="Describí compromisos, procesos o políticas de calidad."
+                                error={errors["content.es"]}
+                            />
+                            <AdminRichTextarea
+                                label="Contenido en inglés"
+                                value={data.content.en}
+                                onChange={(value) => setData("content", { ...data.content, en: value })}
+                                placeholder="Versión en inglés"
+                                error={errors["content.en"]}
+                                optional
+                            />
+                        </div>
+                    </AdminSectionCard>
+
+                    <AdminSectionCard
+                        title="Imagen lateral"
+                        description="La imagen acompaña el texto en la parte pública, por eso conviene revisar la vista previa antes de guardar."
+                    >
+                        <AdminFileField
+                            label="Imagen"
+                            value={data.image}
+                            onChange={(file) => setData("image", file)}
+                            accept="image/png,image/jpeg,image/webp"
+                            maxSizeMB={5}
+                            currentUrl={section?.image ? `/storage/${section.image}` : null}
+                            currentLabel="Imagen actual de la sección"
+                            hint="Formatos admitidos: JPG, PNG o WEBP."
+                            error={errors.image}
+                        />
+
+                        <AdminToggle
+                            label="Mostrar esta sección en la web"
+                            hint="Si la dejás oculta, no se verá en la página pública."
+                            checked={data.is_active}
+                            onChange={(value) => setData("is_active", value)}
+                        />
+                    </AdminSectionCard>
+
                     <div className="flex justify-end">
                         <button
                             type="submit"
                             disabled={processing}
-                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow transition flex items-center gap-2 disabled:opacity-50"
+                            className="inline-flex items-center rounded-2xl bg-[#25A7CA] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
                         >
-                            <Icon icon="solar:diskette-outline" width={18} />
-                            Guardar cambios
+                            {processing ? "Guardando cambios..." : "Guardar cambios"}
                         </button>
                     </div>
-
                 </form>
-
             </div>
         </AdminLayout>
     );

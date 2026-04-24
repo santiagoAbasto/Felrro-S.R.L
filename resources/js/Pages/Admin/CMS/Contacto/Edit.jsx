@@ -1,32 +1,90 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { route } from "ziggy-js";
-import { useMemo } from "react";
+import {
+    AdminPageHeader,
+    AdminRichTextarea,
+    AdminSectionCard,
+    AdminTextInput,
+    AdminToggle,
+} from "@/Components/Admin/FormElements";
+
+const ALLOWED_MAP_HOSTS = [
+    "www.google.com",
+    "google.com",
+    "www.google.com.ar",
+    "google.com.ar",
+    "maps.google.com",
+];
+
+const extractIframeSrc = (value) => {
+    if (!value) return "";
+
+    if (typeof window !== "undefined") {
+        try {
+            const parser = new window.DOMParser();
+            const doc = parser.parseFromString(value, "text/html");
+            const iframe = doc.querySelector("iframe");
+
+            if (iframe?.getAttribute("src")) {
+                return iframe.getAttribute("src") ?? "";
+            }
+        } catch {
+            // sigue con fallback por regex
+        }
+    }
+
+    const iframeMatch = value.match(/src=["']([^"']+)["']/i);
+    if (iframeMatch?.[1]) {
+        return iframeMatch[1];
+    }
+
+    const trimmed = value.trim();
+
+    if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+
+    return "";
+};
+
+const sanitizeMapPreviewUrl = (value) => {
+    const rawSrc = extractIframeSrc(value);
+
+    if (!rawSrc) {
+        return "";
+    }
+
+    try {
+        const parsed = new URL(rawSrc);
+
+        if (parsed.protocol !== "https:") {
+            return "";
+        }
+
+        const normalizedHost = parsed.hostname.toLowerCase();
+        const normalizedPath = parsed.pathname.toLowerCase();
+
+        if (!ALLOWED_MAP_HOSTS.includes(normalizedHost)) {
+            return "";
+        }
+
+        if (!normalizedPath.includes("/maps/embed")) {
+            return "";
+        }
+
+        return parsed.toString();
+    } catch {
+        return "";
+    }
+};
 
 export default function Edit({ page }) {
+    const banner = page.sections.find((section) => section.type === "contact_banner");
+    const info = page.sections.find((section) => section.type === "contact_info");
+    const map = page.sections.find((section) => section.type === "contact_map");
 
-    const banner = useMemo(
-        () => page.sections.find(s => s.type === "contact_banner"),
-        [page]
-    );
-
-    const info = useMemo(
-        () => page.sections.find(s => s.type === "contact_info"),
-        [page]
-    );
-
-    const map = useMemo(
-        () => page.sections.find(s => s.type === "contact_map"),
-        [page]
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | 🔥 NORMALIZACIÓN SEGURA (ANTI-NULL)
-    |--------------------------------------------------------------------------
-    */
-
-    const { data, setData, put, processing } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         banner: {
             title: {
                 es: banner?.title?.es ?? "",
@@ -38,7 +96,6 @@ export default function Edit({ page }) {
             },
             is_active: banner?.is_active ?? true,
         },
-
         info: {
             address: {
                 es: info?.content?.address?.es ?? "",
@@ -52,287 +109,254 @@ export default function Edit({ page }) {
             },
             is_active: info?.is_active ?? true,
         },
-
         map: {
             iframe: info?.content?.iframe ?? map?.content?.iframe ?? "",
             is_active: map?.is_active ?? true,
         },
     });
 
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
         put(route("admin.contacto.update"));
     };
 
-    /* ── estilos ── */
-    const cardClass   = "bg-white rounded-xl shadow-sm overflow-hidden mb-8";
-    const headerClass = "px-6 py-4 border-b border-[#DDDDE0]";
-    const bodyClass   = "p-6";
-    const labelClass  = "block text-sm font-semibold text-[#101010] mb-2";
-    const inputClass  = "w-full px-4 py-3 rounded-lg border border-[#D9D9D9] bg-white text-[#101010] text-sm outline-none focus:border-[#25A7CA] transition-colors";
-
-    const Toggle = ({ checked, onChange }) => (
-        <div
-            className="flex items-center gap-3 cursor-pointer select-none mt-2"
-            onClick={() => onChange(!checked)}
-        >
-            <div className={"w-10 h-6 rounded-full transition-colors relative " + (checked ? "bg-[#25A7CA]" : "bg-[#D9D9D9]")}>
-                <div className={"absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform " + (checked ? "translate-x-5" : "translate-x-1")} />
-            </div>
-            <span className="text-sm font-medium text-[#101010]">
-                {checked ? "Activo" : "Inactivo"}
-            </span>
-        </div>
-    );
+    const mapPreviewUrl = sanitizeMapPreviewUrl(data.map.iframe);
+    const hasMapCode = (data.map.iframe ?? "").trim().length > 0;
 
     return (
         <AdminLayout>
-            <Head title="Editar Contacto" />
+            <Head title="Contacto" />
 
-            <div className="p-8 min-h-screen bg-gray-50 font-[Montserrat]">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Contacto"
+                    title="Página de contacto"
+                    description="Editá el encabezado, los datos de contacto y el mapa embebido. Todo se mantiene con una guía simple para evitar errores."
+                />
 
-                <h1 className="text-3xl font-bold text-[#101010] mb-8">
-                    CMS — Página Contacto
-                </h1>
-
-                <form onSubmit={submit}>
-
-                    {/* ═════════ BANNER ═════════ */}
-                    <div className={cardClass}>
-                        <div className={headerClass}>
-                            <h2 className="text-base font-bold text-[#101010]">Banner</h2>
+                <form onSubmit={submit} className="space-y-8">
+                    <AdminSectionCard
+                        title="Encabezado"
+                        description="Es el texto principal que presenta la página de contacto."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Título"
+                                value={data.banner.title.es}
+                                onChange={(value) =>
+                                    setData("banner", {
+                                        ...data.banner,
+                                        title: { ...data.banner.title, es: value },
+                                    })
+                                }
+                                error={errors["banner.title.es"]}
+                            />
+                            <AdminTextInput
+                                label="Título en inglés"
+                                value={data.banner.title.en}
+                                onChange={(value) =>
+                                    setData("banner", {
+                                        ...data.banner,
+                                        title: { ...data.banner.title, en: value },
+                                    })
+                                }
+                                error={errors["banner.title.en"]}
+                                optional
+                            />
                         </div>
-                        <div className={bodyClass}>
 
-                            <div className="grid grid-cols-2 gap-6">
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Texto de apoyo"
+                                value={data.banner.subtitle.es}
+                                onChange={(value) =>
+                                    setData("banner", {
+                                        ...data.banner,
+                                        subtitle: { ...data.banner.subtitle, es: value },
+                                    })
+                                }
+                                placeholder="Invitá al visitante a escribir o llamar."
+                                error={errors["banner.subtitle.es"]}
+                            />
+                            <AdminRichTextarea
+                                label="Texto de apoyo en inglés"
+                                value={data.banner.subtitle.en}
+                                onChange={(value) =>
+                                    setData("banner", {
+                                        ...data.banner,
+                                        subtitle: { ...data.banner.subtitle, en: value },
+                                    })
+                                }
+                                placeholder="Versión en inglés"
+                                error={errors["banner.subtitle.en"]}
+                                optional
+                            />
+                        </div>
 
-                                <div>
-                                    <label className={labelClass}>Título ES</label>
-                                    <input
-                                        type="text"
-                                        className={inputClass}
-                                        value={data.banner.title.es}
-                                        onChange={e =>
-                                            setData("banner", {
-                                                ...data.banner,
-                                                title: { ...data.banner.title, es: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
+                        <AdminToggle
+                            label="Mostrar encabezado"
+                            hint="Si queda oculto, la página seguirá funcionando pero sin este bloque."
+                            checked={data.banner.is_active}
+                            onChange={(value) => setData("banner", { ...data.banner, is_active: value })}
+                        />
+                    </AdminSectionCard>
 
-                                <div>
-                                    <label className={labelClass}>Title EN</label>
-                                    <input
-                                        type="text"
-                                        className={inputClass}
-                                        value={data.banner.title.en}
-                                        onChange={e =>
-                                            setData("banner", {
-                                                ...data.banner,
-                                                title: { ...data.banner.title, en: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
+                    <AdminSectionCard
+                        title="Datos de contacto"
+                        description="Completá la información práctica que verá el cliente en la web."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Dirección"
+                                value={data.info.address.es}
+                                onChange={(value) =>
+                                    setData("info", {
+                                        ...data.info,
+                                        address: { ...data.info.address, es: value },
+                                    })
+                                }
+                                placeholder="Ej: Calle, número, localidad y provincia"
+                                error={errors["info.address.es"]}
+                            />
+                            <AdminRichTextarea
+                                label="Dirección en inglés"
+                                value={data.info.address.en}
+                                onChange={(value) =>
+                                    setData("info", {
+                                        ...data.info,
+                                        address: { ...data.info.address, en: value },
+                                    })
+                                }
+                                placeholder="Versión en inglés"
+                                error={errors["info.address.en"]}
+                                optional
+                            />
+                        </div>
 
-                                <div>
-                                    <label className={labelClass}>Subtítulo ES</label>
-                                    <textarea
-                                        rows={3}
-                                        className={inputClass + " resize-none"}
-                                        value={data.banner.subtitle.es}
-                                        onChange={e =>
-                                            setData("banner", {
-                                                ...data.banner,
-                                                subtitle: { ...data.banner.subtitle, es: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Teléfono"
+                                value={data.info.phone}
+                                onChange={(value) => setData("info", { ...data.info, phone: value })}
+                                placeholder="Ej: +54 11 1234 5678"
+                                error={errors["info.phone"]}
+                            />
+                            <AdminTextInput
+                                label="Correo electrónico"
+                                value={data.info.email}
+                                onChange={(value) => setData("info", { ...data.info, email: value })}
+                                placeholder="Ej: ventas@felrro.com"
+                                type="email"
+                                error={errors["info.email"]}
+                            />
+                        </div>
 
-                                <div>
-                                    <label className={labelClass}>Subtitle EN</label>
-                                    <textarea
-                                        rows={3}
-                                        className={inputClass + " resize-none"}
-                                        value={data.banner.subtitle.en}
-                                        onChange={e =>
-                                            setData("banner", {
-                                                ...data.banner,
-                                                subtitle: { ...data.banner.subtitle, en: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminRichTextarea
+                                label="Horario de atención"
+                                value={data.info.schedule.es}
+                                onChange={(value) =>
+                                    setData("info", {
+                                        ...data.info,
+                                        schedule: { ...data.info.schedule, es: value },
+                                    })
+                                }
+                                placeholder="Ej: Lunes a viernes de 8 a 17 h"
+                                error={errors["info.schedule.es"]}
+                            />
+                            <AdminRichTextarea
+                                label="Horario en inglés"
+                                value={data.info.schedule.en}
+                                onChange={(value) =>
+                                    setData("info", {
+                                        ...data.info,
+                                        schedule: { ...data.info.schedule, en: value },
+                                    })
+                                }
+                                placeholder="Versión en inglés"
+                                error={errors["info.schedule.en"]}
+                                optional
+                            />
+                        </div>
 
+                        <AdminToggle
+                            label="Mostrar datos de contacto"
+                            hint="Si lo desactivás, la información no se verá en la web."
+                            checked={data.info.is_active}
+                            onChange={(value) => setData("info", { ...data.info, is_active: value })}
+                        />
+                    </AdminSectionCard>
+
+                    <AdminSectionCard
+                        title="Mapa embebido"
+                        description="Pegá acá el código del mapa y usá la vista previa para confirmar que cargue correctamente."
+                        tone="accent"
+                    >
+                        <AdminRichTextarea
+                            label="Código del mapa"
+                            value={data.map.iframe}
+                            onChange={(value) => setData("map", { ...data.map, iframe: value })}
+                            placeholder='<iframe src="https://www.google.com/maps/embed?..." ...></iframe>'
+                            hint="No hace falta editar el código salvo para reemplazar el mapa por uno nuevo."
+                            error={errors["map.iframe"]}
+                            previewTitle="Vista previa del código"
+                        />
+
+                        {hasMapCode ? (
+                            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                                    Vista previa del mapa
+                                </p>
+                                {!mapPreviewUrl ? (
+                                    <div className="mt-4 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+                                        La vista previa solo acepta mapas embebidos seguros de Google Maps usando el código de
+                                        <strong> "Insertar un mapa"</strong>.
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200">
+                                        <iframe
+                                            src={mapPreviewUrl}
+                                            title="Vista previa del mapa"
+                                            className="h-[320px] w-full"
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer-when-downgrade"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                )}
+
+                                {mapPreviewUrl ? (
+                                    <div className="mt-4">
+                                        <a
+                                            href={mapPreviewUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                                        >
+                                            Abrir mapa en una pestaña nueva
+                                        </a>
+                                    </div>
+                                ) : null}
                             </div>
+                        ) : null}
 
-                            <Toggle
-                                checked={data.banner.is_active}
-                                onChange={v =>
-                                    setData("banner", { ...data.banner, is_active: v })
-                                }
-                            />
-                        </div>
-                    </div>
+                        <AdminToggle
+                            label="Mostrar mapa"
+                            hint="Si lo desactivás, la página se publica sin el mapa."
+                            checked={data.map.is_active}
+                            onChange={(value) => setData("map", { ...data.map, is_active: value })}
+                        />
+                    </AdminSectionCard>
 
-                    {/* ═════════ INFO ═════════ */}
-                    <div className={cardClass}>
-                        <div className={headerClass}>
-                            <h2 className="text-base font-bold text-[#101010]">
-                                Información de Contacto
-                            </h2>
-                        </div>
-                        <div className={bodyClass}>
-
-                            <div className="grid grid-cols-2 gap-6">
-
-                                <div>
-                                    <label className={labelClass}>Dirección ES</label>
-                                    <textarea
-                                        rows={3}
-                                        className={inputClass + " resize-none"}
-                                        value={data.info.address.es}
-                                        onChange={e =>
-                                            setData("info", {
-                                                ...data.info,
-                                                address: { ...data.info.address, es: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Address EN</label>
-                                    <textarea
-                                        rows={3}
-                                        className={inputClass + " resize-none"}
-                                        value={data.info.address.en}
-                                        onChange={e =>
-                                            setData("info", {
-                                                ...data.info,
-                                                address: { ...data.info.address, en: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Teléfono</label>
-                                    <input
-                                        type="text"
-                                        className={inputClass}
-                                        value={data.info.phone}
-                                        onChange={e =>
-                                            setData("info", { ...data.info, phone: e.target.value })
-                                        }
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Email</label>
-                                    <input
-                                        type="email"
-                                        className={inputClass}
-                                        value={data.info.email}
-                                        onChange={e =>
-                                            setData("info", { ...data.info, email: e.target.value })
-                                        }
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Horario ES</label>
-                                    <textarea
-                                        rows={3}
-                                        className={inputClass + " resize-none"}
-                                        value={data.info.schedule.es}
-                                        onChange={e =>
-                                            setData("info", {
-                                                ...data.info,
-                                                schedule: { ...data.info.schedule, es: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Schedule EN</label>
-                                    <textarea
-                                        rows={3}
-                                        className={inputClass + " resize-none"}
-                                        value={data.info.schedule.en}
-                                        onChange={e =>
-                                            setData("info", {
-                                                ...data.info,
-                                                schedule: { ...data.info.schedule, en: e.target.value }
-                                            })
-                                        }
-                                    />
-                                </div>
-
-                            </div>
-
-                            <Toggle
-                                checked={data.info.is_active}
-                                onChange={v =>
-                                    setData("info", { ...data.info, is_active: v })
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    {/* ═════════ MAPA ═════════ */}
-                    <div className={cardClass}>
-                        <div className={headerClass}>
-                            <h2 className="text-base font-bold text-[#101010]">
-                                Mapa (Iframe)
-                            </h2>
-                        </div>
-                        <div className={bodyClass}>
-
-                            <textarea
-                                rows={5}
-                                className={inputClass + " resize-none font-mono text-xs"}
-                                value={data.map.iframe}
-                                onChange={e =>
-                                    setData("map", { ...data.map, iframe: e.target.value })
-                                }
-                                placeholder='<iframe src="https://www.google.com/maps/embed?..." ...></iframe>'
-                            />
-
-                            {data.map.iframe && (
-                                <div className="mt-6">
-                                    <p className="text-sm font-semibold mb-3">Vista previa</p>
-                                    <div
-                                        className="w-full rounded-xl overflow-hidden border border-[#DDDDE0]"
-                                        style={{ height: 360 }}
-                                        dangerouslySetInnerHTML={{ __html: data.map.iframe }}
-                                    />
-                                </div>
-                            )}
-
-                            <Toggle
-                                checked={data.map.is_active}
-                                onChange={v =>
-                                    setData("map", { ...data.map, is_active: v })
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    {/* SUBMIT */}
                     <div className="flex justify-end">
                         <button
                             type="submit"
                             disabled={processing}
-                            className="inline-flex px-8 py-3 rounded-full bg-[#25A7CA] hover:bg-[#1f93b3] text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                            className="inline-flex items-center rounded-2xl bg-[#25A7CA] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
                         >
-                            {processing ? "Guardando..." : "Guardar cambios"}
+                            {processing ? "Guardando cambios..." : "Guardar cambios"}
                         </button>
                     </div>
-
                 </form>
             </div>
         </AdminLayout>

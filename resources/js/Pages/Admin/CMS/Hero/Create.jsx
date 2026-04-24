@@ -1,213 +1,208 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm } from "@inertiajs/react";
+import { useEffect, useState } from "react";
 import { route } from "ziggy-js";
-import { useState } from "react";
+import {
+    AdminPageHeader,
+    AdminSectionCard,
+    AdminTextInput,
+    AdminToggle,
+} from "@/Components/Admin/FormElements";
 
 const MAX_SIZE_MB = 3;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function Create() {
+    const [uploadError, setUploadError] = useState("");
+    const [previewUrls, setPreviewUrls] = useState([]);
 
     const { data, setData, post, processing, errors } = useForm({
-        title:       { es: "", en: "" },
-        subtitle:    { es: "", en: "" },
+        title: { es: "", en: "" },
+        subtitle: { es: "", en: "" },
         button_text: { es: "", en: "" },
         button_link: "",
-        is_active:   true,
-        images:      [],
+        is_active: true,
+        images: [],
     });
 
+    useEffect(() => {
+        const urls = data.images.map((file) => URL.createObjectURL(file));
+        setPreviewUrls(urls);
+
+        return () => urls.forEach((url) => URL.revokeObjectURL(url));
+    }, [data.images]);
+
     const validateFile = (file) => {
-        if (!ALLOWED_TYPES.includes(file.type))
-            return "Formato no permitido (JPG, PNG, WEBP)";
-        if (file.size > MAX_SIZE_MB * 1024 * 1024)
-            return `La imagen supera el máximo de ${MAX_SIZE_MB}MB`;
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            return "Solo se admiten imágenes JPG, PNG o WEBP.";
+        }
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            return `Cada imagen puede pesar hasta ${MAX_SIZE_MB} MB.`;
+        }
         return null;
     };
 
     const handleImages = (files) => {
         const valid = [];
-        Array.from(files).forEach(file => {
-            const err = validateFile(file);
-            if (!err) valid.push(file);
-            else alert(err);
+        const invalidMessages = [];
+
+        Array.from(files).forEach((file) => {
+            const error = validateFile(file);
+            if (error) {
+                invalidMessages.push(`${file.name}: ${error}`);
+                return;
+            }
+            valid.push(file);
         });
-        setData("images", [...data.images, ...valid]);
+
+        setUploadError(invalidMessages.join(" "));
+        if (valid.length > 0) {
+            setData("images", [...data.images, ...valid]);
+        }
     };
 
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
         post(route("admin.hero.store"), { forceFormData: true });
     };
 
     return (
         <AdminLayout>
-            <Head title="Nuevo Hero Slider" />
+            <Head title="Nuevo slider" />
 
-            <div className="px-8 py-6 space-y-6">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Inicio"
+                    title="Nuevo slider"
+                    description="Creá un bloque nuevo para el inicio. Podés dejar el texto preparado y sumar varias imágenes con vista previa."
+                />
 
-                <div>
-                    <h1 className="text-3xl font-semibold text-gray-800">
-                        Nuevo Slider Hero
-                    </h1>
-                    <p className="text-gray-500 mt-1">
-                        Crea un nuevo grupo de slides para el hero del Home.
-                    </p>
-                </div>
+                <form onSubmit={submit} className="space-y-8">
+                    <AdminSectionCard
+                        title="Contenido general"
+                        description="Este texto funciona como base del slider y se usa cuando una imagen no tiene contenido propio."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Título"
+                                value={data.title.es}
+                                onChange={(value) => setData("title", { ...data.title, es: value })}
+                                error={errors["title.es"]}
+                            />
+                            <AdminTextInput
+                                label="Título en inglés"
+                                value={data.title.en}
+                                onChange={(value) => setData("title", { ...data.title, en: value })}
+                                error={errors["title.en"]}
+                                optional
+                            />
+                        </div>
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Subtítulo"
+                                value={data.subtitle.es}
+                                onChange={(value) => setData("subtitle", { ...data.subtitle, es: value })}
+                                error={errors["subtitle.es"]}
+                            />
+                            <AdminTextInput
+                                label="Subtítulo en inglés"
+                                value={data.subtitle.en}
+                                onChange={(value) => setData("subtitle", { ...data.subtitle, en: value })}
+                                error={errors["subtitle.en"]}
+                                optional
+                            />
+                        </div>
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Texto del botón"
+                                value={data.button_text.es}
+                                onChange={(value) => setData("button_text", { ...data.button_text, es: value })}
+                                error={errors["button_text.es"]}
+                            />
+                            <AdminTextInput
+                                label="Texto del botón en inglés"
+                                value={data.button_text.en}
+                                onChange={(value) => setData("button_text", { ...data.button_text, en: value })}
+                                error={errors["button_text.en"]}
+                                optional
+                            />
+                        </div>
 
-                <form
-                    onSubmit={submit}
-                    className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 space-y-10"
-                >
-
-                    {/* ── TÍTULO ── */}
-                    <SectionTitle label="Título" />
-                    <LangInput
-                        label="Título Español"
-                        value={data.title.es}
-                        onChange={val => setData("title", { ...data.title, es: val })}
-                        error={errors["title.es"]}
-                    />
-                    <LangInput
-                        label="Title English"
-                        value={data.title.en}
-                        onChange={val => setData("title", { ...data.title, en: val })}
-                        error={errors["title.en"]}
-                    />
-
-                    {/* ── SUBTÍTULO ── */}
-                    <SectionTitle label="Subtítulo" />
-                    <LangInput
-                        label="Subtítulo Español"
-                        value={data.subtitle.es}
-                        onChange={val => setData("subtitle", { ...data.subtitle, es: val })}
-                        error={errors["subtitle.es"]}
-                    />
-                    <LangInput
-                        label="Subtitle English"
-                        value={data.subtitle.en}
-                        onChange={val => setData("subtitle", { ...data.subtitle, en: val })}
-                        error={errors["subtitle.en"]}
-                    />
-
-                    {/* ── BOTÓN ── */}
-                    <SectionTitle label="Botón" />
-                    <LangInput
-                        label="Texto Botón Español"
-                        value={data.button_text.es}
-                        onChange={val => setData("button_text", { ...data.button_text, es: val })}
-                        error={errors["button_text.es"]}
-                    />
-                    <LangInput
-                        label="Button Text English"
-                        value={data.button_text.en}
-                        onChange={val => setData("button_text", { ...data.button_text, en: val })}
-                        error={errors["button_text.en"]}
-                    />
-                    <LangInput
-                        label="Enlace del botón (ej: /productos)"
-                        value={data.button_link}
-                        onChange={val => setData("button_link", val)}
-                        error={errors["button_link"]}
-                    />
-
-                    {/* ── IMÁGENES INICIALES ── */}
-                    <SectionTitle label="Imágenes iniciales (opcional)" />
-
-                    <label className="flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-[#25A7CA] transition">
-                        <span className="text-gray-600 font-medium">
-                            Hacer clic para agregar imágenes
-                        </span>
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/png, image/jpeg, image/webp"
-                            onChange={e => handleImages(e.target.files)}
-                            className="hidden"
+                        <AdminTextInput
+                            label="Destino del botón"
+                            value={data.button_link}
+                            onChange={(value) => setData("button_link", value)}
+                            placeholder="Ej: /productos"
+                            error={errors.button_link}
+                            optional
                         />
-                    </label>
+                    </AdminSectionCard>
 
-                    {data.images.length > 0 && (
-                        <div className="grid grid-cols-3 gap-4">
-                            {data.images.map((file, i) => (
-                                <div key={i} className="relative border border-gray-200 rounded-xl overflow-hidden">
-                                    <img
-                                        src={URL.createObjectURL(file)}
-                                        alt={`preview-${i}`}
-                                        className="w-full h-32 object-cover"
+                    <AdminSectionCard
+                        title="Imágenes iniciales"
+                        description="Podés cargar una o varias imágenes. El panel rechaza automáticamente las que superen el peso permitido."
+                        tone="accent"
+                    >
+                        <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50/80 p-5">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#25A7CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d96b8]">
+                                    Seleccionar imágenes
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/png,image/jpeg,image/webp"
+                                        onChange={(event) => handleImages(event.target.files)}
+                                        className="hidden"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setData("images", data.images.filter((_, j) => j !== i))}
-                                        className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-blue-800">
-                        <p className="font-semibold mb-1">Recomendación de imagen</p>
-                        <p>
-                            Recomendado <strong>1360 × 450 px</strong> •
-                            Formatos <strong>JPG / PNG / WEBP</strong> •
-                            Máximo <strong>3MB</strong>
-                        </p>
-                    </div>
-
-                    {/* ── ESTADO ── */}
-                    <div className="flex items-center justify-between pt-6 border-t">
-                        <div>
-                            <div className="font-semibold text-gray-800">Activo</div>
-                            <div className="text-sm text-gray-500">
-                                Si está activo se mostrará en el Home (solo se muestra el primero activo por orden).
+                                </label>
+                                <span className="text-xs text-slate-400">
+                                    Recomendado: 1360 × 450 px. Máximo 3 MB por imagen.
+                                </span>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setData("is_active", !data.is_active)}
-                            className={`px-5 py-2 rounded-full text-sm font-semibold transition
-                                ${data.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                        >
-                            {data.is_active ? "Activo" : "Inactivo"}
-                        </button>
-                    </div>
 
-                    {/* ── GUARDAR ── */}
-                    <div className="pt-6">
+                            {uploadError ? <p className="mt-3 text-xs font-medium text-red-500">{uploadError}</p> : null}
+                            {errors.images ? <p className="mt-3 text-xs font-medium text-red-500">{errors.images}</p> : null}
+
+                            {previewUrls.length > 0 ? (
+                                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                    {previewUrls.map((url, index) => (
+                                        <div key={url} className="overflow-hidden rounded-[22px] border border-slate-200 bg-white">
+                                            <img src={url} alt={`Vista previa ${index + 1}`} className="h-40 w-full object-cover" />
+                                            <div className="flex items-center justify-between px-4 py-3">
+                                                <p className="truncate text-sm text-slate-500">{data.images[index]?.name}</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setData("images", data.images.filter((_, itemIndex) => itemIndex !== index))}
+                                                    className="text-xs font-semibold text-red-500 transition hover:text-red-600"
+                                                >
+                                                    Quitar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <AdminToggle
+                            label="Mostrar este slider en el inicio"
+                            hint="Si está activo, podrá mostrarse según el orden configurado."
+                            checked={data.is_active}
+                            onChange={(value) => setData("is_active", value)}
+                        />
+                    </AdminSectionCard>
+
+                    <div className="flex justify-end">
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-[#25A7CA] hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition disabled:opacity-50"
+                            className="inline-flex items-center rounded-2xl bg-[#25A7CA] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
                         >
-                            {processing ? "Creando..." : "Crear Slider"}
+                            {processing ? "Creando slider..." : "Guardar slider"}
                         </button>
                     </div>
-
                 </form>
             </div>
         </AdminLayout>
-    );
-}
-
-function SectionTitle({ label }) {
-    return (
-        <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">{label}</h2>
-    );
-}
-
-function LangInput({ label, value, onChange, error }) {
-    return (
-        <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
-            <input
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#25A7CA] focus:outline-none transition"
-                value={value ?? ""}
-                onChange={e => onChange(e.target.value)}
-            />
-            {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-        </div>
     );
 }

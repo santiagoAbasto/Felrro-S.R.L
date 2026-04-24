@@ -1,189 +1,116 @@
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { useState } from "react";
+import { route } from "ziggy-js";
+import {
+    AdminFileField,
+    AdminPageHeader,
+    AdminSectionCard,
+    AdminTextInput,
+    AdminToggle,
+} from "@/Components/Admin/FormElements";
 
 export default function Create() {
-
     const { data, setData, post, processing, errors } = useForm({
         name: { es: "", en: "" },
         file: null,
         order: "",
-        is_active: true
+        is_active: true,
     });
 
-    const [fileName, setFileName] = useState(null);
-
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
         post(route("admin.downloads.store"), {
-            forceFormData: true
+            forceFormData: true,
         });
     };
 
     return (
         <AdminLayout>
-            <Head title="Nueva Descarga" />
+            <Head title="Nueva descarga" />
 
-            <div className="p-10 bg-gray-50 min-h-screen space-y-8">
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="Descargas"
+                    title="Nueva descarga"
+                    description="Cargá un archivo para que esté disponible en la web. Antes de guardar vas a poder revisar nombre, orden y archivo elegido."
+                />
 
-                {/* HEADER */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">
-                        Nueva Descarga
-                    </h1>
-                    <p className="text-gray-500 mt-2">
-                        Agrega un nuevo archivo descargable al sitio web.
-                    </p>
-                </div>
-
-                {/* CARD */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10">
-
-                    <form onSubmit={submit} className="space-y-10">
-
-                        {/* MULTILENGUAJE */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Nombre (Español)
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={data.name.es}
-                                    onChange={(e) =>
-                                        setData("name", { ...data.name, es: e.target.value })
-                                    }
-                                    className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-[#25A7CA] focus:border-[#25A7CA] outline-none transition"
-                                />
-
-                                {errors["name.es"] && (
-                                    <p className="text-red-500 text-sm mt-2">
-                                        {errors["name.es"]}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Nombre (English)
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={data.name.en}
-                                    onChange={(e) =>
-                                        setData("name", { ...data.name, en: e.target.value })
-                                    }
-                                    className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-[#25A7CA] focus:border-[#25A7CA] outline-none transition"
-                                />
-                            </div>
-
+                <form onSubmit={submit} className="space-y-8">
+                    <AdminSectionCard
+                        title="Información visible"
+                        description="Es el nombre que se mostrará en el sitio para que el visitante identifique el archivo."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Nombre"
+                                value={data.name.es}
+                                onChange={(value) => setData("name", { ...data.name, es: value })}
+                                placeholder="Ej: Catálogo general"
+                                error={errors["name.es"]}
+                            />
+                            <AdminTextInput
+                                label="Nombre en inglés"
+                                value={data.name.en}
+                                onChange={(value) => setData("name", { ...data.name, en: value })}
+                                placeholder="Versión en inglés"
+                                error={errors["name.en"]}
+                                optional
+                            />
                         </div>
+                    </AdminSectionCard>
 
-                        {/* ARCHIVO */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">
-                                Archivo
-                            </label>
+                    <AdminSectionCard
+                        title="Archivo"
+                        description="Elegí el documento final para publicar. El panel muestra el nombre del archivo seleccionado."
+                        tone="accent"
+                    >
+                        <AdminFileField
+                            label="Documento"
+                            value={data.file}
+                            onChange={(file) => setData("file", file)}
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.png,.jpg,.jpeg,.webp"
+                            maxSizeMB={20}
+                            hint="Podés subir documentos, planillas, archivos comprimidos o imágenes según lo que necesites compartir."
+                            error={errors.file}
+                            kind="document"
+                            buttonLabel="Elegir archivo"
+                        />
+                    </AdminSectionCard>
 
-                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#25A7CA] transition cursor-pointer bg-gray-50">
+                    <AdminSectionCard
+                        title="Orden y visibilidad"
+                        description="El orden ayuda a decidir cómo se muestra dentro del listado."
+                    >
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Orden"
+                                value={data.order}
+                                onChange={(value) => setData("order", value.toUpperCase())}
+                                placeholder="Ej: A, AA o AB"
+                                hint="Usá una referencia corta para ordenar el listado."
+                                error={errors.order}
+                                optional
+                            />
 
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    id="fileUpload"
-                                    onChange={(e) => {
-                                        setData("file", e.target.files[0]);
-                                        setFileName(e.target.files[0]?.name);
-                                    }}
-                                />
-
-                                <label htmlFor="fileUpload" className="cursor-pointer">
-
-                                    <div className="text-gray-500">
-                                        {fileName ? (
-                                            <span className="font-semibold text-[#25A7CA]">
-                                                {fileName}
-                                            </span>
-                                        ) : (
-                                            "Haz clic para subir un archivo (máx 20MB)"
-                                        )}
-                                    </div>
-
-                                </label>
-                            </div>
-
-                            {errors.file && (
-                                <p className="text-red-500 text-sm mt-2">
-                                    {errors.file}
-                                </p>
-                            )}
+                            <AdminToggle
+                                label="Mostrar esta descarga en la web"
+                                hint="Si queda desactivada, se guarda pero no se muestra."
+                                checked={data.is_active}
+                                onChange={(value) => setData("is_active", value)}
+                            />
                         </div>
+                    </AdminSectionCard>
 
-                        {/* ORDEN + ACTIVO */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Orden (A, AA, AB...)
-                                </label>
-
-                                <input
-                                    type="text"
-                                    value={data.order}
-                                    onChange={(e) =>
-                                        setData("order", e.target.value.toUpperCase())
-                                    }
-                                    className="w-full rounded-xl border border-gray-300 px-4 py-3 uppercase focus:ring-2 focus:ring-[#25A7CA] focus:border-[#25A7CA] outline-none transition"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-4 mt-8 md:mt-0">
-                                <label className="text-sm font-semibold text-gray-700">
-                                    Activo
-                                </label>
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setData("is_active", !data.is_active)
-                                    }
-                                    className={`w-14 h-8 flex items-center rounded-full p-1 transition ${
-                                        data.is_active
-                                            ? "bg-[#25A7CA]"
-                                            : "bg-gray-300"
-                                    }`}
-                                >
-                                    <div
-                                        className={`bg-white w-6 h-6 rounded-full shadow-md transform transition ${
-                                            data.is_active
-                                                ? "translate-x-6"
-                                                : ""
-                                        }`}
-                                    />
-                                </button>
-                            </div>
-
-                        </div>
-
-                        {/* BOTÓN */}
-                        <div className="flex justify-end pt-6 border-t border-gray-100">
-
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="bg-[#25A7CA] text-white px-8 py-3 rounded-xl font-semibold shadow hover:opacity-90 transition disabled:opacity-50"
-                            >
-                                {processing ? "Guardando..." : "Guardar Descarga"}
-                            </button>
-
-                        </div>
-
-                    </form>
-                </div>
-
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="inline-flex items-center rounded-2xl bg-[#25A7CA] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1d96b8] disabled:opacity-60"
+                        >
+                            {processing ? "Guardando..." : "Guardar descarga"}
+                        </button>
+                    </div>
+                </form>
             </div>
         </AdminLayout>
     );

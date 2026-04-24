@@ -406,10 +406,10 @@ class ProductController extends Controller
             'description.es' => 'nullable|string',
             'description.en' => 'nullable|string',
 
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:min_width=300,min_height=300',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072|dimensions:min_width=288,min_height=288',
 
             'gallery'   => 'nullable|array',
-            'gallery.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+            'gallery.*' => 'image|mimes:jpg,jpeg,png,webp|max:3072|dimensions:min_width=288,min_height=288',
 
             'ficha_tecnica_file' => 'nullable|file|mimes:pdf|max:5120',
 

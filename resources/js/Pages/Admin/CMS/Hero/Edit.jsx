@@ -10,21 +10,20 @@ export default function Edit({ section }) {
 
     const [deletedImages, setDeletedImages] = useState([]);
     const [localImages, setLocalImages] = useState(section.images ?? []);
+    const [uploadError, setUploadError] = useState("");
     const fileInputRefs = useRef({});
 
     const { data, setData, post, processing, errors } = useForm({
         _method: "put",
-        // Campos globales del hero (fallback si el slide no tiene contenido propio)
+        // Campos globales del slider (se usan como respaldo si un slide no tiene texto propio)
         title: section.title ?? { es: "", en: "" },
         subtitle: section.subtitle ?? { es: "", en: "" },
         content: section.content ?? { es: "", en: "" },
         button_text: section.button_text ?? { es: "", en: "" },
         button_link: section.button_link ?? "",
         is_active: section.is_active ?? true,
-        // Nuevas imágenes a subir
         images: [],
         deleted_images: [],
-        // Contenido por slide (id + campos editables)
         slide_data: (section.images ?? []).map(img => ({
             id: img.id,
             title: img.title ?? { es: "", en: "" },
@@ -57,7 +56,8 @@ export default function Edit({ section }) {
     const handleReplaceImage = (id, file) => {
         if (!file) return;
         const error = validateFile(file);
-        if (error) { alert(error); return; }
+        if (error) { setUploadError(error); return; }
+        setUploadError("");
 
         const previewUrl = URL.createObjectURL(file);
         setLocalImages(prev =>
@@ -75,6 +75,7 @@ export default function Edit({ section }) {
     const handleNewImages = (files) => {
         const fileArray = Array.from(files);
         const validFiles = [];
+        const invalidMessages = [];
 
         fileArray.forEach(file => {
             const error = validateFile(file);
@@ -86,10 +87,11 @@ export default function Edit({ section }) {
                     { id: `new-${Date.now()}-${Math.random()}`, image: previewUrl, isPreview: true, isNew: true }
                 ]);
             } else {
-                alert(error);
+                invalidMessages.push(`${file.name}: ${error}`);
             }
         });
 
+        setUploadError(invalidMessages.join(" "));
         setData("images", [...data.images, ...validFiles]);
     };
 
@@ -112,13 +114,13 @@ export default function Edit({ section }) {
 
     return (
         <AdminLayout>
-            <Head title="Editar Hero" />
+            <Head title="Editar slider" />
 
             <div className="px-8 py-6 space-y-6">
 
                 <div>
-                    <h1 className="text-3xl font-semibold text-gray-800">Editar Slide Hero</h1>
-                    <p className="text-gray-500 mt-1">Gestión completa del slider principal.</p>
+                    <h1 className="text-3xl font-semibold text-gray-800">Editar slider</h1>
+                    <p className="text-gray-500 mt-1">Revisá cada slide, sus imágenes y el contenido que aparece en el inicio.</p>
                 </div>
 
                 <form
@@ -128,8 +130,8 @@ export default function Edit({ section }) {
 
                     {/* ── CONTENIDO GLOBAL (DEFAULT / FALLBACK) ── */}
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-amber-800">
-                        <p className="font-semibold mb-1">Contenido global (fallback)</p>
-                        <p>Si un slide no tiene contenido propio, se usará este texto como respaldo.</p>
+                        <p className="font-semibold mb-1">Contenido general de respaldo</p>
+                        <p>Si un slide no tiene texto propio, se usará este contenido automáticamente.</p>
                     </div>
 
                     <SectionTitle label="Título global" />
@@ -140,7 +142,7 @@ export default function Edit({ section }) {
                         error={errors["title.es"]}
                     />
                     <LangInput
-                        label="Title English"
+                        label="Título en inglés"
                         value={data.title.en}
                         onChange={val => setData("title", { ...data.title, en: val })}
                         error={errors["title.en"]}
@@ -154,7 +156,7 @@ export default function Edit({ section }) {
                         error={errors["subtitle.es"]}
                     />
                     <LangInput
-                        label="Subtitle English"
+                        label="Subtítulo en inglés"
                         value={data.subtitle.en}
                         onChange={val => setData("subtitle", { ...data.subtitle, en: val })}
                         error={errors["subtitle.en"]}
@@ -168,7 +170,7 @@ export default function Edit({ section }) {
                         error={errors["button_text.es"]}
                     />
                     <LangInput
-                        label="Button Text English"
+                        label="Texto del botón en inglés"
                         value={data.button_text.en}
                         onChange={val => setData("button_text", { ...data.button_text, en: val })}
                         error={errors["button_text.en"]}
@@ -227,12 +229,15 @@ export default function Edit({ section }) {
                             className="hidden"
                         />
                     </label>
+                    {uploadError ? (
+                        <p className="text-sm font-medium text-red-500">{uploadError}</p>
+                    ) : null}
 
                     {/* ── ACTIVE TOGGLE ── */}
                     <div className="flex items-center justify-between pt-6 border-t">
                         <div>
-                            <div className="font-semibold text-gray-800">Slide Activo</div>
-                            <div className="text-sm text-gray-500">Si está desactivado no será visible.</div>
+                            <div className="font-semibold text-gray-800">Slider visible</div>
+                            <div className="text-sm text-gray-500">Si queda oculto, no se mostrará en el inicio.</div>
                         </div>
                         <button
                             type="button"
@@ -251,7 +256,7 @@ export default function Edit({ section }) {
                             disabled={processing}
                             className="w-full bg-[#25A7CA] hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition disabled:opacity-50"
                         >
-                            {processing ? "Guardando..." : "Guardar Cambios"}
+                            {processing ? "Guardando..." : "Guardar cambios"}
                         </button>
                     </div>
 
@@ -313,7 +318,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                     <p className="text-sm font-semibold text-gray-700 truncate">
                         {slideData?.title?.es || <span className="text-gray-400 italic">Sin título</span>}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-400 mt-0.5">
                         Tipo: <span className="font-medium">{isVideo ? "Video" : "Imagen"}</span>
                     </p>
                 </div>
@@ -360,7 +365,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                                             : "bg-white text-gray-600 border-gray-300 hover:border-[#25A7CA]"
                                         }`}
                                 >
-                                    {type === "image" ? "🖼 Imagen" : "🎬 Video"}
+                                    {type === "image" ? "Imagen" : "Video"}
                                 </button>
                             ))}
                         </div>
@@ -370,7 +375,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                     {isVideo && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                URL de video (YouTube o Vimeo)
+                                Enlace del video (YouTube o Vimeo)
                             </label>
                             <input
                                 type="url"
@@ -393,7 +398,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                         onChange={val => onUpdateNestedField("title", "es", val)}
                     />
                     <LangInput
-                        label="Title English"
+                        label="Título en inglés"
                         value={slideData.title?.en ?? ""}
                         onChange={val => onUpdateNestedField("title", "en", val)}
                     />
@@ -406,7 +411,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                         onChange={val => onUpdateNestedField("subtitle", "es", val)}
                     />
                     <LangInput
-                        label="Subtitle English"
+                        label="Subtítulo en inglés"
                         value={slideData.subtitle?.en ?? ""}
                         onChange={val => onUpdateNestedField("subtitle", "en", val)}
                     />
@@ -419,7 +424,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                         onChange={val => onUpdateNestedField("button_text", "es", val)}
                     />
                     <LangInput
-                        label="Button Text English"
+                        label="Texto del botón en inglés"
                         value={slideData.button_text?.en ?? ""}
                         onChange={val => onUpdateNestedField("button_text", "en", val)}
                     />
@@ -430,7 +435,7 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                     />
 
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
-                        Si los campos de este slide están vacíos, se usará el contenido global como respaldo.
+                        Si estos campos quedan vacíos, el sistema usará el contenido general de respaldo.
                     </div>
 
                 </div>

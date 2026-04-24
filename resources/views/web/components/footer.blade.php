@@ -127,8 +127,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const toast = document.getElementById('newsletter-toast');
 
     function showToast() {
+        toast.style.display = 'block';
         toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3500);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 180);
+        }, 3500);
     }
 
     if (form) {
