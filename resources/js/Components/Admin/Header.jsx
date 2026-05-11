@@ -8,6 +8,8 @@ const titleMap = [
     { match: "/admin/hero", title: "Inicio", description: "Administrá los sliders del comienzo del sitio." },
     { match: "/admin/cms/home", title: "Nosotros en Inicio", description: "Editá el bloque de presentación que aparece dentro del inicio." },
     { match: "/admin/about", title: "Nosotros", description: "Actualizá la página institucional y su contenido principal." },
+    { match: "/admin/products-import", title: "Importación de productos", description: "Procesá planillas técnicas, elegí categoría y generá fichas PDF automáticamente." },
+    { match: "/admin/product-icons", title: "Iconos técnicos", description: "Subí y nombrá los iconos que se usan en las fichas técnicas." },
     { match: "/admin/products", title: "Productos", description: "Gestioná el catálogo que se muestra en el sitio." },
     { match: "/admin/sectors", title: "Sectores", description: "Ordená los sectores y su información visible." },
     { match: "/admin/cms/calidad", title: "Calidad", description: "Mantené el bloque principal de calidad claro y actualizado." },
@@ -19,6 +21,7 @@ const titleMap = [
     { match: "/admin/contact", title: "Contacto", description: "Editá datos de contacto y revisá mensajes recibidos." },
     { match: "/admin/comercial/quotations", title: "Cotización", description: "Seguimiento simple de las solicitudes comerciales." },
     { match: "/admin/newsletter", title: "Newsletter", description: "Gestioná suscriptores y envíos desde una sola pantalla." },
+    { match: "/admin/settings/floating-whatsapp", title: "WhatsApp flotante", description: "Administrá el acceso flotante visible en la web pública." },
     { match: "/admin/seo", title: "Metadatos SEO", description: "Definí cómo se presenta cada página en buscadores y redes." },
 ];
 

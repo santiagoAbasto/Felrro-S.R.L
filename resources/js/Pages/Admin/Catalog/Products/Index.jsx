@@ -153,6 +153,12 @@ export default function Index({ products, stats }) {
                                                     >
                                                         Editar
                                                     </Link>
+                                                    <Link
+                                                        href={route("admin.products.pdf-assets.edit", product.id)}
+                                                        className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                                                    >
+                                                        PDF / tabla
+                                                    </Link>
                                                     <button
                                                         type="button"
                                                         onClick={() => destroy(product.id)}

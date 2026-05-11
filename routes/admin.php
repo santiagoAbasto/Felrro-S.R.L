@@ -18,8 +18,11 @@ use App\Http\Controllers\Admin\SeoController;
 use App\Http\Controllers\Admin\Catalog\ProductController;
 use App\Http\Controllers\Admin\Catalog\ProductCategoryController;
 use App\Http\Controllers\Admin\Catalog\ProductApplicationController;
+use App\Http\Controllers\Admin\Catalog\ProductIconController;
 use App\Http\Controllers\Admin\Catalog\ProductImageController;
+use App\Http\Controllers\Admin\Catalog\ProductPdfAssetController;
 use App\Http\Controllers\Admin\Catalog\ProductSpecificationController;
+use App\Http\Controllers\Admin\Catalog\ProductTechnicalImportController;
 
 /* CMS */
 use App\Http\Controllers\Admin\CMS\PostController;
@@ -197,6 +200,34 @@ Route::prefix('admin')
             Route::resource('products', ProductController::class)
                 ->whereNumber('product');
 
+            Route::get('/products-import/aflamex-potencia', [ProductTechnicalImportController::class, 'index'])
+                ->name('products.import.aflamex-potencia.index');
+
+            Route::post('/products-import/aflamex-potencia', [ProductTechnicalImportController::class, 'store'])
+                ->name('products.import.aflamex-potencia.store');
+
+            Route::delete('/products-import/aflamex-potencia/latest', [ProductTechnicalImportController::class, 'destroyLatest'])
+                ->name('products.import.aflamex-potencia.destroy-latest');
+
+            Route::delete('/products-import/aflamex-potencia/{batch}', [ProductTechnicalImportController::class, 'destroy'])
+                ->whereNumber('batch')
+                ->name('products.import.aflamex-potencia.destroy');
+
+            Route::get('/products/{product}/pdf-assets', [ProductPdfAssetController::class, 'edit'])
+                ->whereNumber('product')
+                ->name('products.pdf-assets.edit');
+
+            Route::put('/products/{product}/pdf-assets', [ProductPdfAssetController::class, 'update'])
+                ->whereNumber('product')
+                ->name('products.pdf-assets.update');
+
+            Route::post('/product-icons/{product_icon}', [ProductIconController::class, 'update'])
+                ->whereNumber('product_icon')
+                ->name('product-icons.update-post');
+
+            Route::resource('product-icons', ProductIconController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+
             Route::resource('product-categories', ProductCategoryController::class);
             Route::resource('product-applications', ProductApplicationController::class);
             Route::resource('product-images', ProductImageController::class);
@@ -337,6 +368,12 @@ Route::prefix('admin')
 
                     Route::put('/footer', [SiteSettingController::class, 'updateFooter'])
                         ->name('footer.update');
+
+                    Route::get('/floating-whatsapp', [SiteSettingController::class, 'editFloatingWhatsapp'])
+                        ->name('floating-whatsapp.edit');
+
+                    Route::put('/floating-whatsapp', [SiteSettingController::class, 'updateFloatingWhatsapp'])
+                        ->name('floating-whatsapp.update');
                 });
 
             /*

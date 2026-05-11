@@ -356,6 +356,7 @@ export function AdminFileField({
 
         setLocalError("");
         onChange(nextFile);
+        event.target.value = "";
     };
 
     const clearSelection = () => {
@@ -394,13 +395,13 @@ export function AdminFileField({
                         {buttonLabel}
                     </button>
 
-                    {value || effectivePreview ? (
+                    {value ? (
                         <button
                             type="button"
                             onClick={clearSelection}
                             className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white"
                         >
-                            Quitar selección
+                            Quitar archivo elegido
                         </button>
                     ) : null}
 

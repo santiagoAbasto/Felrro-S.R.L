@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Catalog;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Services\AflamexPotenciaPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -153,7 +154,8 @@ class ProductController extends Controller
             'category',
             'images',
             'specifications',
-            'applications'
+            'applications',
+            'technicalSections.rows',
         ]);
 
         return Inertia::render('Admin/Catalog/Products/Edit', [
@@ -175,6 +177,8 @@ class ProductController extends Controller
                 'extras' => $product->applications
                     ->where('type', 'extra')
                     ->values(),
+
+                'technical_sections' => $this->serializeTechnicalSections($product),
             ],
 
             'categories' => ProductCategory::where('is_active', true)
@@ -186,11 +190,12 @@ class ProductController extends Controller
     /* =======================================================
    UPDATE
 ======================================================= */
-    public function update(Request $request, Product $product)
+    public function update(Request $request, Product $product, AflamexPotenciaPdfService $pdfService)
     {
         $validated = $this->validateProduct($request, $product);
+        $uploadedManualFicha = false;
 
-        DB::transaction(function () use ($request, $product, &$validated) {
+        DB::transaction(function () use ($request, $product, &$validated, &$uploadedManualFicha) {
 
             $validated['featured']  = $request->boolean('featured');
             $validated['is_active'] = $request->boolean('is_active');
@@ -211,7 +216,12 @@ class ProductController extends Controller
                         Storage::disk('public')->delete($product->image);
                     }
 
+                    if ($product->pdf_graphic && Storage::disk('public')->exists($product->pdf_graphic)) {
+                        Storage::disk('public')->delete($product->pdf_graphic);
+                    }
+
                     $validated['image'] = $newImage;
+                    $validated['pdf_graphic'] = null;
                 }
             } else {
                 // ⚠️ CRÍTICO: preservar imagen actual
@@ -241,6 +251,7 @@ class ProductController extends Controller
                     $validated['ficha_tecnica_file']   = $newFile;
                     $validated['ficha_tecnica_weight'] = $request->file('ficha_tecnica_file')->getSize();
                     $validated['ficha_tecnica_format'] = $request->file('ficha_tecnica_file')->getClientOriginalExtension();
+                    $uploadedManualFicha = true;
                 }
             } else {
                 unset($validated['ficha_tecnica_file']);
@@ -302,7 +313,15 @@ class ProductController extends Controller
         */
             $product->applications()->delete();
             $this->syncApplications($product, $request);
+
+            if ($request->has('technical_sections')) {
+                $this->syncTechnicalSections($product, $request->input('technical_sections', []));
+            }
         });
+
+        if (!$uploadedManualFicha && $product->fresh()->technicalSections()->exists()) {
+            $pdfService->generate($product->fresh());
+        }
 
         return redirect()
             ->route('admin.products.index')
@@ -406,10 +425,10 @@ class ProductController extends Controller
             'description.es' => 'nullable|string',
             'description.en' => 'nullable|string',
 
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072|dimensions:min_width=288,min_height=288',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
 
             'gallery'   => 'nullable|array',
-            'gallery.*' => 'image|mimes:jpg,jpeg,png,webp|max:3072|dimensions:min_width=288,min_height=288',
+            'gallery.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
 
             'ficha_tecnica_file' => 'nullable|file|mimes:pdf|max:5120',
 
@@ -417,6 +436,139 @@ class ProductController extends Controller
             'featured_order' => 'nullable|string|max:10',
             'is_active' => 'nullable|boolean',
         ]);
+    }
+
+    private function serializeTechnicalSections(Product $product)
+    {
+        return $product->technicalSections
+            ->sortBy('order')
+            ->values()
+            ->map(function ($section) {
+                $firstRow = $section->rows->first();
+
+                return [
+                    'id' => $section->id,
+                    'type' => $section->type,
+                    'title' => $section->title ?? ['es' => '', 'en' => ''],
+                    'headers' => $section->type === 'electrical'
+                        ? []
+                        : collect($firstRow?->values['headers'] ?? [])
+                            ->map(fn ($header) => (string) $header)
+                            ->values()
+                            ->all(),
+                    'rows' => $section->rows
+                        ->sortBy('order')
+                        ->values()
+                        ->map(function ($row) use ($section) {
+                            return [
+                                'id' => $row->id,
+                                'nominal_section' => $row->nominal_section,
+                                'formation' => $row->formation,
+                                'values' => $section->type === 'electrical'
+                                    ? collect([
+                                        'resistencia_20_cc',
+                                        'resistencia_70_ca',
+                                        'reactancia_c1',
+                                        'reactancia_c2',
+                                        'aire_bipolar',
+                                        'aire_multipolar',
+                                        'tierra_bipolar',
+                                        'tierra_multipolar',
+                                    ])->mapWithKeys(fn ($key) => [$key => (string) ($row->values[$key]['value'] ?? '')])->all()
+                                    : collect($row->values['raw'] ?? [])
+                                        ->map(fn ($value) => (string) $value)
+                                        ->values()
+                                        ->all(),
+                            ];
+                        })
+                        ->all(),
+                ];
+            });
+    }
+
+    private function syncTechnicalSections(Product $product, array $sections): void
+    {
+        $existingIds = $product->technicalSections()->pluck('id')->all();
+        $keptIds = [];
+
+        foreach ($sections as $sectionIndex => $sectionData) {
+            $sectionId = isset($sectionData['id']) ? (int) $sectionData['id'] : null;
+            $section = $sectionId
+                ? $product->technicalSections()->whereKey($sectionId)->first()
+                : null;
+
+            if (!$section) {
+                $section = $product->technicalSections()->make([
+                    'product_import_batch_id' => null,
+                    'sheet_name' => null,
+                    'source_row' => null,
+                ]);
+            }
+
+            $section->fill([
+                'type' => $sectionData['type'] ?? 'dimensions',
+                'title' => $sectionData['title'] ?? ['es' => '', 'en' => ''],
+                'order' => $sectionIndex + 1,
+            ]);
+            $section->save();
+            $keptIds[] = $section->id;
+
+            $headers = collect($sectionData['headers'] ?? [])
+                ->map(fn ($header) => trim((string) $header))
+                ->filter(fn ($header) => $header !== '')
+                ->values()
+                ->all();
+
+            $section->rows()->delete();
+
+            foreach (($sectionData['rows'] ?? []) as $rowIndex => $rowData) {
+                if (($sectionData['type'] ?? 'dimensions') === 'electrical') {
+                    $values = collect([
+                        'resistencia_20_cc',
+                        'resistencia_70_ca',
+                        'reactancia_c1',
+                        'reactancia_c2',
+                        'aire_bipolar',
+                        'aire_multipolar',
+                        'tierra_bipolar',
+                        'tierra_multipolar',
+                    ])->mapWithKeys(function ($key) use ($rowData) {
+                        return [$key => ['value' => trim((string) ($rowData['values'][$key] ?? ''))]];
+                    })->all();
+
+                    $section->rows()->create([
+                        'nominal_section' => trim((string) ($rowData['nominal_section'] ?? '')),
+                        'formation' => null,
+                        'values' => $values,
+                        'order' => $rowIndex + 1,
+                    ]);
+
+                    continue;
+                }
+
+                $rawValues = collect($rowData['values'] ?? [])
+                    ->take(count($headers))
+                    ->pad(count($headers), '')
+                    ->map(fn ($value) => trim((string) $value))
+                    ->values()
+                    ->all();
+
+                $section->rows()->create([
+                    'formation' => trim((string) ($rowData['formation'] ?? '')),
+                    'values' => [
+                        'headers' => $headers,
+                        'raw' => $rawValues,
+                    ],
+                    'order' => $rowIndex + 1,
+                ]);
+            }
+        }
+
+        $idsToDelete = array_diff($existingIds, $keptIds);
+
+        if ($idsToDelete) {
+            $product->technicalSections()->whereIn('id', $idsToDelete)->delete();
+        }
     }
 
     /* =======================================================

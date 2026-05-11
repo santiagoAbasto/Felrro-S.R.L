@@ -35,6 +35,7 @@ export default function Create({ categories }) {
         applications: [],
         extras: [],
         specifications: [],
+        technical_sections: [],
     });
 
     /* =====================================================

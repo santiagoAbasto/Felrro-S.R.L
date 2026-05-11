@@ -31,7 +31,7 @@ class ProductImageController extends Controller
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
             'order' => 'nullable|integer'
         ]);
 
@@ -63,7 +63,7 @@ class ProductImageController extends Controller
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:3072',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'order' => 'nullable|integer'
         ]);
 

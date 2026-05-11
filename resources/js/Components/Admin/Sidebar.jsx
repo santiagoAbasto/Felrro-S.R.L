@@ -21,6 +21,8 @@ const navigation = [
         icon: "solar:box-outline",
         children: [
             { title: "Listado de productos", url: "/admin/products", icon: "solar:box-minimalistic-outline" },
+            { title: "Importar productos", url: "/admin/products-import/aflamex-potencia", icon: "solar:upload-square-outline" },
+            { title: "Iconos técnicos", url: "/admin/product-icons", icon: "solar:gallery-favourite-outline" },
             { title: "Categorías", url: "/admin/product-categories", icon: "solar:layers-outline" },
         ],
     },
@@ -79,6 +81,13 @@ const navigation = [
         icon: "solar:mailbox-outline",
         children: [
             { title: "Suscriptores y envíos", url: "/admin/newsletter", icon: "solar:inbox-archive-outline" },
+        ],
+    },
+    {
+        title: "WhatsApp flotante",
+        icon: "solar:chat-round-call-outline",
+        children: [
+            { title: "Configuración", url: "/admin/settings/floating-whatsapp", icon: "solar:smartphone-update-outline" },
         ],
     },
     {

@@ -21,6 +21,8 @@ class Product extends Model
         'featured_order',
         'home_order',
         'image',
+        'pdf_graphic',
+        'pdf_color_table',
         'ficha_tecnica_file',
         'ficha_tecnica_weight',
         'ficha_tecnica_format',
@@ -38,6 +40,8 @@ class Product extends Model
 
     protected $appends = [
         'image_url',
+        'pdf_graphic_url',
+        'pdf_color_table_url',
         'ficha_tecnica_url'
     ];
 
@@ -99,6 +103,19 @@ class Product extends Model
         return $this->hasMany(ProductApplication::class)->orderBy('order');
     }
 
+    public function technicalSections()
+    {
+        return $this->hasMany(ProductTechnicalSection::class)->orderBy('order');
+    }
+
+    public function icons()
+    {
+        return $this->belongsToMany(ProductIcon::class, 'product_icon')
+            ->withPivot('order', 'show_in_pdf', 'pdf_group')
+            ->withTimestamps()
+            ->orderBy('product_icon.order');
+    }
+
     public function quotationItems()
     {
         return $this->hasMany(QuotationItem::class);
@@ -121,6 +138,24 @@ class Product extends Model
         if (!$this->ficha_tecnica_file) return null;
 
         return asset('storage/' . $this->ficha_tecnica_file);
+    }
+
+    public function getPdfGraphicUrlAttribute(): ?string
+    {
+        if (!$this->pdf_graphic || !Storage::disk('public')->exists($this->pdf_graphic)) {
+            return null;
+        }
+
+        return asset('storage/' . $this->pdf_graphic);
+    }
+
+    public function getPdfColorTableUrlAttribute(): ?string
+    {
+        if (!$this->pdf_color_table || !Storage::disk('public')->exists($this->pdf_color_table)) {
+            return null;
+        }
+
+        return asset('storage/' . $this->pdf_color_table);
     }
 
     /* =======================================================

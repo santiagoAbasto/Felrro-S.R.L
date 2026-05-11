@@ -1,6 +1,53 @@
 @extends('web.layouts.app')
 
 @section('content')
+@php
+    $formatTechnicalCell = function ($value) {
+        $value = trim((string) ($value ?? ''));
+
+        if ($value === '') {
+            return '--';
+        }
+
+        if (mb_strtoupper($value) === 'NO VA') {
+            return 'NO VA';
+        }
+
+        $normalized = str_replace(',', '.', $value);
+
+        if (is_numeric($normalized)) {
+            $number = (float) $normalized;
+            $decimals = abs($number - round($number)) < 0.001 ? 0 : 2;
+
+            return number_format($number, $decimals, ',', '.');
+        }
+
+        return $value;
+    };
+
+    $formatTechnicalTitle = function ($value) {
+        $title = trim((string) preg_replace('/\s+/u', ' ', (string) ($value ?? '')));
+
+        if ($title === '') {
+            return '';
+        }
+
+        $title = str_replace(['//', '≥ 50%', '? AL 50%', '? 50%'], [' / ', '≥ AL 50%', '≥ AL 50%', '≥ AL 50%'], $title);
+        $title = preg_replace('/[?¿�]\s*(?:AL\s*)?50%/iu', '≥ AL 50%', $title) ?? $title;
+        $title = preg_replace('/\s*\+\s*/u', ' + ', $title) ?? $title;
+        $title = preg_replace('/≥\s*(?:AL\s*)?50%/iu', '≥ AL 50%', $title) ?? $title;
+
+        if (str_contains(mb_strtoupper($title), 'TETRAPOLARES + PE Y NEUTRO REDUCIDO')) {
+            $title = preg_replace(
+                '/TETRAPOLARES\s*\+\s*PE\s+y\s+NEUTRO\s+REDUCIDO/iu',
+                'TRIPOLARES + PE O + NEUTRO REDUCIDO',
+                $title
+            ) ?? $title;
+        }
+
+        return trim($title);
+    };
+@endphp
 
 <section class="product-page">
 
@@ -114,17 +161,11 @@
 
                 <h3 class="section-title">{{ __('messages.applications') }}</h3>
 
-                @if($product->getDescription())
-                <p class="applications-intro">
-                    {{ $product->getDescription() }}
-                </p>
-                @endif
-
                 <div class="applications-grid">
                     @foreach($applications as $app)
                     <div class="application-card">
-                        <h4>{{ $app->getTitle() }}</h4>
-                        <p>{{ $app->getContent() }}</p>
+                        <h4>{{ $app['title'] }}</h4>
+                        <p>{!! nl2br(e($app['content'])) !!}</p>
                     </div>
                     @endforeach
                 </div>
@@ -161,27 +202,92 @@
                     @endforeach
                 </div>
 
+                @if($technicalSections->count())
+                    <div class="technical-public">
+                        <div class="technical-public__header">
+                            <span class="technical-public__eyebrow">Datos técnicos</span>
+                            <h3>Tablas técnicas del producto</h3>
+                            <p>Información dimensional y eléctrica importada desde la ficha técnica, presentada para consulta rápida en la web.</p>
+                        </div>
+
+                        <div class="technical-public__list">
+                            @foreach($technicalSections as $section)
+                                <article class="technical-public__card">
+                                    <div class="technical-public__title">
+                                        {{ $formatTechnicalTitle($section->getTitle()) }}
+                                    </div>
+
+                                    <div class="technical-public__table-wrap">
+                                        @if($section->type === 'electrical')
+                                            <table class="technical-public__table technical-public__table--electrical">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Sección nominal <span>mm²</span></th>
+                                                        <th>Res. 20°C C.C.</th>
+                                                        <th>Res. 70°C C.A.</th>
+                                                        <th>React. c1</th>
+                                                        <th>React. c2</th>
+                                                        <th>Aire bipolar</th>
+                                                        <th>Aire multipolar</th>
+                                                        <th>Tierra bipolar</th>
+                                                        <th>Tierra multipolar</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($section->rows as $row)
+                                                        <tr>
+                                                            <td>{{ $row->nominal_section }}</td>
+                                                            @foreach(['resistencia_20_cc','resistencia_70_ca','reactancia_c1','reactancia_c2','aire_bipolar','aire_multipolar','tierra_bipolar','tierra_multipolar'] as $key)
+                                                                <td>{{ $formatTechnicalCell($row->values[$key]['value'] ?? '--') }}</td>
+                                                            @endforeach
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        @else
+                                            @php
+                                                $firstRow = $section->rows->first();
+                                                $headers = collect($firstRow->values['headers'] ?? [])
+                                                    ->filter(fn ($header) => trim((string) $header) !== '')
+                                                    ->values();
+                                            @endphp
+                                            <table class="technical-public__table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Formación</th>
+                                                        @foreach($headers as $header)
+                                                            <th>{{ $header }}</th>
+                                                        @endforeach
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($section->rows as $row)
+                                                        @php
+                                                            $rawValues = collect($row->values['raw'] ?? [])
+                                                                ->take($headers->count())
+                                                                ->pad($headers->count(), '')
+                                                                ->values();
+                                                        @endphp
+                                                        <tr>
+                                                            <td>{{ $row->formation }}</td>
+                                                            @foreach($rawValues as $value)
+                                                                <td>{{ $formatTechnicalCell($value) }}</td>
+                                                            @endforeach
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        @endif
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
             </section>
 
         </div>
-
-        {{-- ================= ESPECIFICACIONES TÉCNICAS ================= --}}
-        @if($specifications->count())
-        <section id="specifications" class="content-section">
-
-            <h3 class="section-title">{{ __('messages.technical_specifications') }}</h3>
-
-            <div class="specifications-grid">
-                @foreach($specifications as $spec)
-                <div class="spec-card">
-                    <h4>{{ $spec->getTitle() }}</h4>
-                    <p>{{ $spec->getContent() }}</p>
-                </div>
-                @endforeach
-            </div>
-
-        </section>
-        @endif
 
         {{-- =========================================
             PRODUCTOS DESTACADOS

@@ -7,7 +7,7 @@ import {
 } from "@/Components/Admin/FormElements";
 import { useEffect, useState } from "react";
 
-const IMAGE_MAX_MB = 3;
+const IMAGE_MAX_MB = 5;
 const IMAGE_HINT = "Formato admitido: JPG, PNG o WEBP. Recomendación para miniatura: 288 x 288 px.";
 
 export default function ProductForm({
@@ -124,7 +124,7 @@ export default function ProductForm({
                     <p className="font-semibold text-slate-800">Recomendación de imagen</p>
                     <ul className="mt-3 space-y-2">
                         <li>Resolución recomendada: 288 x 288 px</li>
-                        <li>Tamaño máximo por imagen: 3 MB</li>
+                        <li>Tamaño máximo por imagen: 5 MB</li>
                         <li>Formatos admitidos: JPG, PNG o WEBP</li>
                         <li>Conviene usar fondo limpio y producto centrado</li>
                     </ul>
@@ -259,6 +259,11 @@ export default function ProductForm({
                 onChange={(items) => setData("specifications", items)}
             />
 
+            <TechnicalTablesEditor
+                sections={data.technical_sections}
+                onChange={(sections) => setData("technical_sections", sections)}
+            />
+
             <AdminSectionCard
                 title="Visibilidad del producto"
                 description="Definí si el producto se muestra en el catálogo y si además querés destacarlo en la web."
@@ -310,6 +315,187 @@ export default function ProductForm({
                 </button>
             </div>
         </form>
+    );
+}
+
+const electricalColumns = [
+    ["resistencia_20_cc", "Res. 20°C C.C."],
+    ["resistencia_70_ca", "Res. 70°C C.A."],
+    ["reactancia_c1", "React. c1"],
+    ["reactancia_c2", "React. c2"],
+    ["aire_bipolar", "Aire bipolar"],
+    ["aire_multipolar", "Aire multipolar"],
+    ["tierra_bipolar", "Tierra bipolar"],
+    ["tierra_multipolar", "Tierra multipolar"],
+];
+
+function TechnicalTablesEditor({ sections = [], onChange }) {
+    if (!sections.length) {
+        return null;
+    }
+
+    const updateSection = (sectionIndex, patch) => {
+        onChange(sections.map((section, index) => (index === sectionIndex ? { ...section, ...patch } : section)));
+    };
+
+    const updateSectionTitle = (sectionIndex, locale, value) => {
+        const section = sections[sectionIndex];
+        updateSection(sectionIndex, {
+            title: {
+                ...(section.title ?? {}),
+                [locale]: value,
+            },
+        });
+    };
+
+    const updateHeader = (sectionIndex, headerIndex, value) => {
+        const section = sections[sectionIndex];
+        const headers = [...(section.headers ?? [])];
+        headers[headerIndex] = value;
+        updateSection(sectionIndex, { headers });
+    };
+
+    const updateRow = (sectionIndex, rowIndex, patch) => {
+        const section = sections[sectionIndex];
+        updateSection(sectionIndex, {
+            rows: (section.rows ?? []).map((row, index) => (index === rowIndex ? { ...row, ...patch } : row)),
+        });
+    };
+
+    const updateDimensionValue = (sectionIndex, rowIndex, valueIndex, value) => {
+        const section = sections[sectionIndex];
+        const row = section.rows[rowIndex];
+        const values = [...(row.values ?? [])];
+        values[valueIndex] = value;
+        updateRow(sectionIndex, rowIndex, { values });
+    };
+
+    const updateElectricalValue = (sectionIndex, rowIndex, key, value) => {
+        const section = sections[sectionIndex];
+        const row = section.rows[rowIndex];
+        updateRow(sectionIndex, rowIndex, {
+            values: {
+                ...(row.values ?? {}),
+                [key]: value,
+            },
+        });
+    };
+
+    return (
+        <AdminSectionCard
+            title="Tablas técnicas importadas"
+            description="Estas tablas se cargan al procesar el Excel y alimentan tanto la web pública como el PDF generado. Ajustá solo datos puntuales para mantener consistencia."
+            tone="accent"
+        >
+            <div className="space-y-6">
+                {sections.map((section, sectionIndex) => (
+                    <div key={section.id ?? sectionIndex} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            <AdminTextInput
+                                label="Título de tabla"
+                                value={section.title?.es ?? ""}
+                                onChange={(value) => updateSectionTitle(sectionIndex, "es", value)}
+                                placeholder="Título en español"
+                            />
+                            <AdminTextInput
+                                label="Título de tabla en inglés"
+                                value={section.title?.en ?? ""}
+                                onChange={(value) => updateSectionTitle(sectionIndex, "en", value)}
+                                placeholder="Título en inglés"
+                                optional
+                            />
+                        </div>
+
+                        <div className="mt-5 overflow-x-auto rounded-[20px] border border-slate-200">
+                            {section.type === "electrical" ? (
+                                <table className="min-w-[1120px] w-full text-sm">
+                                    <thead className="bg-slate-900 text-white">
+                                        <tr>
+                                            <th className="px-3 py-3 text-left font-semibold">Sección nominal</th>
+                                            {electricalColumns.map(([, label]) => (
+                                                <th key={label} className="px-3 py-3 text-left font-semibold">{label}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {(section.rows ?? []).map((row, rowIndex) => (
+                                            <tr key={row.id ?? rowIndex}>
+                                                <td className="px-2 py-2">
+                                                    <TableInput
+                                                        value={row.nominal_section ?? ""}
+                                                        onChange={(value) => updateRow(sectionIndex, rowIndex, { nominal_section: value })}
+                                                    />
+                                                </td>
+                                                {electricalColumns.map(([key]) => (
+                                                    <td key={key} className="px-2 py-2">
+                                                        <TableInput
+                                                            value={row.values?.[key] ?? ""}
+                                                            onChange={(value) => updateElectricalValue(sectionIndex, rowIndex, key, value)}
+                                                        />
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <table className="min-w-[860px] w-full text-sm">
+                                    <thead className="bg-slate-900 text-white">
+                                        <tr>
+                                            <th className="px-3 py-3 text-left font-semibold">Formación</th>
+                                            {(section.headers ?? []).map((header, headerIndex) => (
+                                                <th key={headerIndex} className="px-2 py-2">
+                                                    <TableInput
+                                                        value={header}
+                                                        onChange={(value) => updateHeader(sectionIndex, headerIndex, value)}
+                                                        variant="dark"
+                                                    />
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                        {(section.rows ?? []).map((row, rowIndex) => (
+                                            <tr key={row.id ?? rowIndex}>
+                                                <td className="px-2 py-2">
+                                                    <TableInput
+                                                        value={row.formation ?? ""}
+                                                        onChange={(value) => updateRow(sectionIndex, rowIndex, { formation: value })}
+                                                    />
+                                                </td>
+                                                {(section.headers ?? []).map((_, valueIndex) => (
+                                                    <td key={valueIndex} className="px-2 py-2">
+                                                        <TableInput
+                                                            value={row.values?.[valueIndex] ?? ""}
+                                                            onChange={(value) => updateDimensionValue(sectionIndex, rowIndex, valueIndex, value)}
+                                                        />
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </AdminSectionCard>
+    );
+}
+
+function TableInput({ value, onChange, variant = "light" }) {
+    const theme =
+        variant === "dark"
+            ? "border-white/20 bg-white/10 text-white placeholder:text-white/40 focus:border-white/50 focus:ring-white/15"
+            : "border-slate-200 bg-white text-slate-800 focus:border-[#25A7CA] focus:ring-[#25A7CA]/10";
+
+    return (
+        <input
+            value={value ?? ""}
+            onChange={(event) => onChange(event.target.value)}
+            className={`w-full min-w-[92px] rounded-xl border px-3 py-2 text-xs font-semibold outline-none transition focus:ring-4 ${theme}`}
+        />
     );
 }
 

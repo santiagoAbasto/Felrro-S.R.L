@@ -22,6 +22,7 @@ export default function Edit({ product, categories }) {
         applications: product?.applications ?? [],
         extras: product?.extras ?? [],
         specifications: product?.specifications ?? [],
+        technical_sections: product?.technical_sections ?? [],
     }), [product]);
 
     const { data, setData, post, processing, errors } = useForm({
@@ -62,6 +63,7 @@ export default function Edit({ product, categories }) {
         applications: normalizedProduct.applications,
         extras: normalizedProduct.extras,
         specifications: normalizedProduct.specifications,
+        technical_sections: normalizedProduct.technical_sections,
 
         _method: "put",
     });
