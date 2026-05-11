@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use App\Support\SeoMetaResolver;
+use App\View\Composers\WebLayoutComposer;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\View\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,11 +28,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        view()->composer('web.layouts.app', function (View $view): void {
-            $page = $view->getData()['page'] ?? null;
-
-            $view->with('seoMeta', SeoMetaResolver::resolve(request(), $page));
-        });
+        View::composer('web.layouts.app', WebLayoutComposer::class);
 
         // Prefetch de Vite (tu configuración actual)
         Vite::prefetch(concurrency: 3);
