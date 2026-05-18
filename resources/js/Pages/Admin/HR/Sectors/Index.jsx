@@ -1,12 +1,24 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { route } from "ziggy-js";
+import Toast from "@/Components/Toast";
 import { AdminPageHeader, AdminSectionCard } from "@/Components/Admin/FormElements";
 
 export default function Index({ sectors }) {
+    const { flash } = usePage().props;
+
+    const destroySector = (sector) => {
+        if (confirm(`¿Querés eliminar el sector "${sector.name?.es ?? "sin nombre"}"?`)) {
+            router.delete(route("admin.hr.sectors.destroy", sector.id), {
+                preserveScroll: true,
+            });
+        }
+    };
+
     return (
         <AdminLayout>
             <Head title="Sectores internos" />
+            <Toast message={flash.success} type="success" />
 
             <div className="space-y-8">
                 <AdminPageHeader
@@ -25,7 +37,7 @@ export default function Index({ sectors }) {
 
                 <AdminSectionCard
                     title="Listado de sectores"
-                    description="Podés revisar el nombre visible y el estado de cada sector."
+                    description="Podés revisar, editar o eliminar sectores que ya no formen parte del flujo interno."
                 >
                     <div className="overflow-hidden rounded-[24px] border border-slate-200">
                         <table className="w-full text-sm">
@@ -34,7 +46,7 @@ export default function Index({ sectors }) {
                                     <th className="px-4 py-3">Nombre</th>
                                     <th className="px-4 py-3">Nombre en inglés</th>
                                     <th className="px-4 py-3">Estado</th>
-                                    <th className="px-4 py-3 text-right">Acción</th>
+                                    <th className="px-4 py-3 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 bg-white">
@@ -65,13 +77,20 @@ export default function Index({ sectors }) {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <div className="flex justify-end">
+                                                <div className="flex flex-wrap justify-end gap-3">
                                                     <Link
                                                         href={route("admin.hr.sectors.edit", sector.id)}
-                                                        className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                                                        className="text-sm font-semibold text-[#25A7CA] transition hover:text-[#1d96b8]"
                                                     >
                                                         Editar
                                                     </Link>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => destroySector(sector)}
+                                                        className="text-sm font-semibold text-red-500 transition hover:text-red-600"
+                                                    >
+                                                        Eliminar
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -80,6 +99,30 @@ export default function Index({ sectors }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {sectors.last_page > 1 ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span className="text-sm text-slate-400">
+                                Mostrando {sectors.from}–{sectors.to} de {sectors.total}
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {sectors.links.map((link, index) => (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        disabled={!link.url}
+                                        onClick={() => link.url && router.visit(link.url)}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
+                                            link.active
+                                                ? "border-[#25A7CA] bg-[#25A7CA] text-white"
+                                                : "border-slate-200 bg-white text-slate-600 hover:border-[#25A7CA]"
+                                        } ${!link.url ? "cursor-not-allowed opacity-40" : ""}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
                 </AdminSectionCard>
             </div>
         </AdminLayout>

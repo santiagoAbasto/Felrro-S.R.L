@@ -20,10 +20,10 @@ const navigation = [
         title: "Productos",
         icon: "solar:box-outline",
         children: [
+            { title: "Categorías", url: "/admin/product-categories", icon: "solar:layers-outline" },
             { title: "Listado de productos", url: "/admin/products", icon: "solar:box-minimalistic-outline" },
             { title: "Importar productos", url: "/admin/products-import/aflamex-potencia", icon: "solar:upload-square-outline" },
             { title: "Iconos técnicos", url: "/admin/product-icons", icon: "solar:gallery-favourite-outline" },
-            { title: "Categorías", url: "/admin/product-categories", icon: "solar:layers-outline" },
         ],
     },
     {
@@ -142,11 +142,10 @@ export default function Sidebar() {
                 <button
                     type="button"
                     onClick={() => router.visit("/admin/dashboard")}
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
-                        currentUrl.startsWith("/admin/dashboard")
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${currentUrl.startsWith("/admin/dashboard")
                             ? "bg-white text-slate-900 shadow-sm"
                             : "text-slate-200 hover:bg-white/5"
-                    }`}
+                        }`}
                 >
                     <Icon icon="solar:chart-2-outline" width={18} />
                     <span className="text-sm font-semibold">Resumen</span>
@@ -161,9 +160,8 @@ export default function Sidebar() {
                             <button
                                 type="button"
                                 onClick={() => toggleSection(section.title)}
-                                className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
-                                    isSectionActive ? "text-white" : "text-slate-200 hover:text-white"
-                                }`}
+                                className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${isSectionActive ? "text-white" : "text-slate-200 hover:text-white"
+                                    }`}
                             >
                                 <span className="flex items-center gap-3">
                                     <Icon icon={section.icon} width={18} />
@@ -186,11 +184,10 @@ export default function Sidebar() {
                                                 key={item.title}
                                                 type="button"
                                                 onClick={() => router.visit(item.url)}
-                                                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition ${
-                                                    active
+                                                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition ${active
                                                         ? "bg-[#25A7CA] text-white shadow-sm shadow-[#25A7CA]/20"
                                                         : "text-slate-300 hover:bg-white/5 hover:text-white"
-                                                }`}
+                                                    }`}
                                             >
                                                 <Icon icon={item.icon} width={16} />
                                                 <span>{item.title}</span>

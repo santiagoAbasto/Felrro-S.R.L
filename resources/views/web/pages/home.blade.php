@@ -38,13 +38,22 @@ $allSlides->push([
         @endif>
         @if($img->isVideo() && $img->video_url)
         <div class="hero-video-wrap">
+            @php
+            $separator = str_contains($img->video_url, '?') ? '&' : '?';
+            $videoId = basename(parse_url($img->video_url, PHP_URL_PATH) ?? '');
+            @endphp
             <iframe
-                src="{{ $img->video_url }}?autoplay=1&mute=1&loop=1&controls=0&playlist={{ basename(parse_url($img->video_url, PHP_URL_PATH)) }}"
+                src="{{ $img->video_url }}{{ $separator }}autoplay=1&mute=1&muted=1&loop=1&controls=0&playsinline=1&playlist={{ $videoId }}"
                 frameborder="0"
                 allow="autoplay; fullscreen; muted"
                 allowfullscreen>
             </iframe>
         </div>
+        @elseif($img->isVideo() && $img->image)
+        <video class="hero-video-file" autoplay muted loop playsinline preload="metadata">
+            <source src="{{ asset('storage/' . $img->image) }}">
+            {{ __('messages.video_not_supported') }}
+        </video>
         @endif
     </div>
     @endforeach

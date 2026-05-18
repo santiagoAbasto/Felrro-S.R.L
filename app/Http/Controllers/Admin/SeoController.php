@@ -40,8 +40,19 @@ class SeoController extends Controller
             ->values()
             ->all();
 
+        $defaultShareImagePath = public_path('images/logo.png');
+
         return Inertia::render('Admin/Seo/Index', [
             'pages' => $pages,
+            'summary' => [
+                'social_ready_pages' => collect($pages)
+                    ->filter(fn (array $page): bool => filled($page['og_image_url']))
+                    ->count(),
+                'public_base_url' => url('/'),
+                'default_share_image' => is_file($defaultShareImagePath)
+                    ? asset('images/logo.png')
+                    : null,
+            ],
         ]);
     }
 

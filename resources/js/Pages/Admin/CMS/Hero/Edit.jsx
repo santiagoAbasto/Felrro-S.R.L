@@ -1,10 +1,12 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import { useState, useRef } from "react";
 
-const MAX_SIZE_MB = 3;
+const IMAGE_MAX_SIZE_MB = 3;
+const VIDEO_MAX_SIZE_MB = 100;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 
 export default function Edit({ section }) {
 
@@ -23,6 +25,9 @@ export default function Edit({ section }) {
         button_link: section.button_link ?? "",
         is_active: section.is_active ?? true,
         images: [],
+        video_files: [],
+        video_urls: [],
+        new_video_url: "",
         deleted_images: [],
         slide_data: (section.images ?? []).map(img => ({
             id: img.id,
@@ -32,15 +37,27 @@ export default function Edit({ section }) {
             button_link: img.button_link ?? "",
             media_type: img.media_type ?? "image",
             video_url: img.video_url ?? "",
+            image_file: null,
+            video_file: null,
         })),
     });
 
-    const validateFile = (file) => {
+    const validateImage = (file) => {
         if (!ALLOWED_TYPES.includes(file.type)) {
             return "Formato no permitido (JPG, PNG, WEBP)";
         }
-        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-            return `La imagen supera el tamaño máximo de ${MAX_SIZE_MB}MB`;
+        if (file.size > IMAGE_MAX_SIZE_MB * 1024 * 1024) {
+            return `La imagen supera el tamaño máximo de ${IMAGE_MAX_SIZE_MB}MB`;
+        }
+        return null;
+    };
+
+    const validateVideo = (file) => {
+        if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+            return "Formato no permitido (MP4, MOV, WEBM)";
+        }
+        if (file.size > VIDEO_MAX_SIZE_MB * 1024 * 1024) {
+            return `El video supera el tamaño máximo de ${VIDEO_MAX_SIZE_MB}MB`;
         }
         return null;
     };
@@ -55,7 +72,7 @@ export default function Edit({ section }) {
 
     const handleReplaceImage = (id, file) => {
         if (!file) return;
-        const error = validateFile(file);
+        const error = validateImage(file);
         if (error) { setUploadError(error); return; }
         setUploadError("");
 
@@ -66,10 +83,27 @@ export default function Edit({ section }) {
             )
         );
 
-        const updatedDeleted = [...deletedImages, id];
-        setDeletedImages(updatedDeleted);
-        setData("deleted_images", updatedDeleted);
-        setData("images", [...data.images, file]);
+        setData("slide_data", data.slide_data.map(s =>
+            s.id === id ? { ...s, media_type: "image", image_file: file, video_file: null, video_url: "" } : s
+        ));
+    };
+
+    const handleReplaceVideo = (id, file) => {
+        if (!file) return;
+        const error = validateVideo(file);
+        if (error) { setUploadError(error); return; }
+        setUploadError("");
+
+        const previewUrl = URL.createObjectURL(file);
+        setLocalImages(prev =>
+            prev.map(img =>
+                img.id === id ? { ...img, image: previewUrl, isPreview: true, media_type: "video" } : img
+            )
+        );
+
+        setData("slide_data", data.slide_data.map(s =>
+            s.id === id ? { ...s, media_type: "video", video_file: file, video_url: "" } : s
+        ));
     };
 
     const handleNewImages = (files) => {
@@ -78,7 +112,7 @@ export default function Edit({ section }) {
         const invalidMessages = [];
 
         fileArray.forEach(file => {
-            const error = validateFile(file);
+            const error = validateImage(file);
             if (!error) {
                 validFiles.push(file);
                 const previewUrl = URL.createObjectURL(file);
@@ -95,6 +129,29 @@ export default function Edit({ section }) {
         setData("images", [...data.images, ...validFiles]);
     };
 
+    const handleNewVideos = (files) => {
+        const fileArray = Array.from(files);
+        const validFiles = [];
+        const invalidMessages = [];
+
+        fileArray.forEach(file => {
+            const error = validateVideo(file);
+            if (!error) {
+                validFiles.push(file);
+                const previewUrl = URL.createObjectURL(file);
+                setLocalImages(prev => [
+                    ...prev,
+                    { id: `new-video-${Date.now()}-${Math.random()}`, image: previewUrl, isPreview: true, isNew: true, media_type: "video" }
+                ]);
+            } else {
+                invalidMessages.push(`${file.name}: ${error}`);
+            }
+        });
+
+        setUploadError(invalidMessages.join(" "));
+        setData("video_files", [...data.video_files, ...validFiles]);
+    };
+
     const updateSlideData = (id, field, value) => {
         setData("slide_data", data.slide_data.map(s =>
             s.id === id ? { ...s, [field]: value } : s
@@ -109,7 +166,7 @@ export default function Edit({ section }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("admin.hero.update", section.id), { forceFormData: true });
+        router.post(route("admin.hero.update", section.id), data, { forceFormData: true });
     };
 
     return (
@@ -196,6 +253,7 @@ export default function Edit({ section }) {
                                     slideData={slideData}
                                     onDelete={() => handleDeleteImage(image.id)}
                                     onReplaceImage={(file) => handleReplaceImage(image.id, file)}
+                                    onReplaceVideo={(file) => handleReplaceVideo(image.id, file)}
                                     onUpdateField={(field, value) => updateSlideData(image.id, field, value)}
                                     onUpdateNestedField={(field, sub, value) => updateSlideNestedData(image.id, field, sub, value)}
                                     fileInputRef={(el) => (fileInputRefs.current[image.id] = el)}
@@ -206,11 +264,12 @@ export default function Edit({ section }) {
 
                     {/* ── RECOMENDACIÓN ── */}
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-sm text-blue-800">
-                        <p className="font-semibold mb-2">Recomendación de imagen</p>
+                        <p className="font-semibold mb-2">Recomendación de media</p>
                         <p>
                             Recomendado <strong>1360 × 450 px</strong> •
                             Formatos <strong>JPG / PNG / WEBP</strong> •
-                            Tamaño máximo <strong>3MB</strong>
+                            Imágenes hasta <strong>3MB</strong> •
+                            Videos MP4/MOV/WEBM hasta <strong>100MB</strong>
                         </p>
                     </div>
 
@@ -232,6 +291,27 @@ export default function Edit({ section }) {
                     {uploadError ? (
                         <p className="text-sm font-medium text-red-500">{uploadError}</p>
                     ) : null}
+
+                    <SectionTitle label="Agregar nuevos videos" />
+
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <label className="flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl p-6 cursor-pointer hover:border-[#25A7CA] transition">
+                            <span className="text-gray-600 font-medium">
+                                Hacer clic para agregar videos locales
+                            </span>
+                            <input
+                                type="file"
+                                multiple
+                                accept="video/mp4, video/quicktime, video/webm"
+                                onChange={(e) => handleNewVideos(e.target.files)}
+                                className="hidden"
+                            />
+                        </label>
+                        <VideoUrlInput
+                            value={data.new_video_url}
+                            onChange={(value) => setData("new_video_url", value)}
+                        />
+                    </div>
 
                     {/* ── ACTIVE TOGGLE ── */}
                     <div className="flex items-center justify-between pt-6 border-t">
@@ -270,12 +350,13 @@ export default function Edit({ section }) {
 /* ────────────────────────────────────────────────
    SLIDE CARD COMPONENT
 ──────────────────────────────────────────────── */
-function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, onUpdateNestedField, fileInputRef }) {
+function SlideCard({ image, slideData, onDelete, onReplaceImage, onReplaceVideo, onUpdateField, onUpdateNestedField, fileInputRef }) {
 
     const [expanded, setExpanded] = useState(false);
     const localFileRef = useRef(null);
 
-    const isVideo = slideData?.media_type === "video";
+    const isVideo = (slideData?.media_type ?? image.media_type) === "video";
+    const localVideoPreview = image.isPreview ? image.image : `/storage/${image.image}`;
 
     return (
         <div className="border border-gray-200 rounded-2xl overflow-hidden">
@@ -285,14 +366,21 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
 
                 {/* Preview media */}
                 <div className="w-48 h-28 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden relative">
-                    {isVideo && slideData?.video_url ? (
+                    {isVideo && (slideData?.video_url || image.video_url) ? (
                         <iframe
-                            src={slideData.video_url}
+                            src={slideData?.video_url || image.video_url}
                             className="w-full h-full"
                             frameBorder="0"
                             allow="autoplay; fullscreen; muted"
                             allowFullScreen
                             title="Video preview"
+                        />
+                    ) : isVideo && image.image ? (
+                        <video
+                            src={localVideoPreview}
+                            className="w-full h-full object-cover"
+                            muted
+                            controls
                         />
                     ) : (
                         <img
@@ -373,19 +461,30 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
 
                     {/* URL de video (solo si es video) */}
                     {isVideo && (
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Enlace del video (YouTube o Vimeo)
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Enlace del video (YouTube o Vimeo)
+                                </label>
+                                <input
+                                    type="url"
+                                    placeholder="https://www.youtube.com/watch?v=..."
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#25A7CA] focus:outline-none transition"
+                                    value={slideData.video_url}
+                                    onChange={(e) => onUpdateField("video_url", e.target.value)}
+                                />
+                            </div>
+                            <label className="block cursor-pointer rounded-xl border border-dashed border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-600 transition hover:border-[#25A7CA]">
+                                Reemplazar por video local
+                                <input
+                                    type="file"
+                                    accept="video/mp4, video/quicktime, video/webm"
+                                    className="hidden"
+                                    onChange={(e) => onReplaceVideo(e.target.files[0])}
+                                />
                             </label>
-                            <input
-                                type="url"
-                                placeholder="https://www.youtube.com/watch?v=..."
-                                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#25A7CA] focus:outline-none transition"
-                                value={slideData.video_url}
-                                onChange={(e) => onUpdateField("video_url", e.target.value)}
-                            />
-                            <p className="text-xs text-gray-400 mt-1">
-                                El video se reproducirá automáticamente, sin sonido y en bucle.
+                            <p className="text-xs text-gray-400">
+                                El video se reproducirá automáticamente, sin sonido y en bucle. Peso máximo: 100 MB.
                             </p>
                         </div>
                     )}
@@ -441,6 +540,26 @@ function SlideCard({ image, slideData, onDelete, onReplaceImage, onUpdateField, 
                 </div>
             )}
 
+        </div>
+    );
+}
+
+function VideoUrlInput({ value, onChange }) {
+    return (
+        <div>
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
+                Enlace de YouTube o Vimeo
+            </label>
+            <input
+                type="url"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#25A7CA]"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+                Pegá el enlace y tocá “Guardar cambios”; no hace falta otro botón.
+            </p>
         </div>
     );
 }

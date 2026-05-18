@@ -59,6 +59,10 @@ class SecurityHeaders
             'https://maps.google.com',
             'https://www.google.com.ar',
             'https://www.googleusercontent.com',
+            'https://www.youtube.com',
+            'https://youtube.com',
+            'https://www.youtube-nocookie.com',
+            'https://player.vimeo.com',
         ];
 
         if ($hotOrigin) {

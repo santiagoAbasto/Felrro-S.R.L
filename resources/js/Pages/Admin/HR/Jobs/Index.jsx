@@ -1,81 +1,129 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import { route } from "ziggy-js";
+import Toast from "@/Components/Toast";
+import { AdminPageHeader, AdminSectionCard } from "@/Components/Admin/FormElements";
 
 export default function Index({ positions }) {
+    const { flash } = usePage().props;
+
+    const destroyPosition = (position) => {
+        if (confirm(`¿Querés eliminar el puesto "${position.title?.es ?? "sin título"}"?`)) {
+            router.delete(route("admin.hr.positions.destroy", position.id), {
+                preserveScroll: true,
+            });
+        }
+    };
+
     return (
         <AdminLayout>
-            <Head title="Puestos Laborales" />
-            <div className="p-8 min-h-screen bg-gray-50 font-[Montserrat]">
+            <Head title="Puestos laborales" />
+            <Toast message={flash.success} type="success" />
 
-                {/* HEADER */}
-                <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-                    <h1 className="text-3xl font-bold text-[#101010] leading-tight m-0">
-                        Puestos Laborales
-                    </h1>
-                    <Link
-                        href={route("admin.hr.positions.create")}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#25A7CA] hover:bg-[#1f93b3] text-white text-sm font-semibold no-underline transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                        Nuevo Puesto
-                    </Link>
-                </div>
+            <div className="space-y-8">
+                <AdminPageHeader
+                    eyebrow="RRHH"
+                    title="Puestos laborales"
+                    description="Administrá los puestos que aparecen como opción dentro del formulario público de postulaciones."
+                    actions={
+                        <Link
+                            href={route("admin.hr.positions.create")}
+                            className="rounded-2xl bg-[#25A7CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d96b8]"
+                        >
+                            Nuevo puesto
+                        </Link>
+                    }
+                />
 
-                {/* TABLA */}
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="border-b border-[#DDDDE0]">
-                                <th className="px-5 py-4 text-left text-[13px] font-bold text-[#101010]">Titulo ES</th>
-                                <th className="px-5 py-4 text-left text-[13px] font-bold text-[#101010]">Titulo EN</th>
-                                <th className="px-5 py-4 text-left text-[13px] font-bold text-[#101010]">Estado</th>
-                                <th className="px-5 py-4 text-right text-[13px] font-bold text-[#101010]"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {positions.data.length === 0 ? (
+                <AdminSectionCard
+                    title="Listado de puestos"
+                    description="Podés editar, pausar o eliminar puestos que ya no deban ofrecerse."
+                >
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200">
+                        <table className="w-full text-sm">
+                            <thead className="bg-slate-50 text-left text-slate-500">
                                 <tr>
-                                    <td colSpan={4} className="px-5 py-16 text-center text-sm text-[#6E6E6E]">
-                                        No hay puestos configurados.
-                                    </td>
+                                    <th className="px-4 py-3">Título</th>
+                                    <th className="px-4 py-3">Título en inglés</th>
+                                    <th className="px-4 py-3">Estado</th>
+                                    <th className="px-4 py-3 text-right">Acciones</th>
                                 </tr>
-                            ) : (
-                                positions.data.map((position) => (
-                                    <tr key={position.id} className="border-b border-[#DDDDE0] hover:bg-[#f7feff] transition-colors">
-                                        <td className="px-5 py-4 text-sm font-bold text-[#101010]">
-                                            {position.title?.es ?? "—"}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm font-normal text-[#101010]">
-                                            {position.title?.en ?? "—"}
-                                        </td>
-                                        <td className="px-5 py-4">
-                                            {position.is_active ? (
-                                                <span className="inline-flex px-3 py-1 rounded-full bg-[#e6f9f1] text-[#1a7a4a] text-xs font-semibold">
-                                                    Activo
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex px-3 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
-                                                    Inactivo
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-5 py-4 text-right">
-                                            <Link
-                                                href={route("admin.hr.positions.edit", position.id)}
-                                                className="inline-flex px-4 py-1.5 rounded-full border border-[#25A7CA] text-[#25A7CA] hover:bg-[#25A7CA] hover:text-white text-xs font-semibold no-underline transition-colors"
-                                            >
-                                                Editar
-                                            </Link>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                                {positions.data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-12 text-center text-slate-400">
+                                            Todavía no hay puestos cargados.
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                ) : (
+                                    positions.data.map((position) => (
+                                        <tr key={position.id}>
+                                            <td className="px-4 py-4 font-medium text-slate-700">
+                                                {position.title?.es ?? "—"}
+                                            </td>
+                                            <td className="px-4 py-4 text-slate-600">
+                                                {position.title?.en ?? "—"}
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        position.is_active
+                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            : "bg-slate-200 text-slate-500"
+                                                    }`}
+                                                >
+                                                    {position.is_active ? "Activo" : "Pausado"}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap justify-end gap-3">
+                                                    <Link
+                                                        href={route("admin.hr.positions.edit", position.id)}
+                                                        className="text-sm font-semibold text-[#25A7CA] transition hover:text-[#1d96b8]"
+                                                    >
+                                                        Editar
+                                                    </Link>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => destroyPosition(position)}
+                                                        className="text-sm font-semibold text-red-500 transition hover:text-red-600"
+                                                    >
+                                                        Eliminar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
+                    {positions.last_page > 1 ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span className="text-sm text-slate-400">
+                                Mostrando {positions.from}–{positions.to} de {positions.total}
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {positions.links.map((link, index) => (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        disabled={!link.url}
+                                        onClick={() => link.url && router.visit(link.url)}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
+                                            link.active
+                                                ? "border-[#25A7CA] bg-[#25A7CA] text-white"
+                                                : "border-slate-200 bg-white text-slate-600 hover:border-[#25A7CA]"
+                                        } ${!link.url ? "cursor-not-allowed opacity-40" : ""}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
+                </AdminSectionCard>
             </div>
         </AdminLayout>
     );

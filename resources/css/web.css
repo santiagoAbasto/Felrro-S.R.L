@@ -60,7 +60,8 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.60) 0%, rgba(0, 0, 0, 0.25) 60%, rgba(0, 0, 0, 0.00) 100%);
+    height: 100px;
+    background: rgba(255, 255, 255, 0.05);
     color: #FFFFFF;
 }
 
@@ -110,13 +111,13 @@ body {
     color: #25A7CA;
 }
 
-/* Contenedor: 1366px - 71px - 71px = 1224px centrado */
+/* Contenedor: contenido centrado en 1224px */
 .nav-inner {
     width: 100%;
-    max-width: 1366px;
+    max-width: 1224px;
     margin: 0 auto;
-    padding-left: 71px;
-    padding-right: 71px;
+    padding-left: 0;
+    padding-right: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -477,8 +478,8 @@ body {
 .hero {
     position: relative;
     width: 100%;
-    height: 100vh;
-    min-height: 679px;
+    height: 772px;
+    min-height: 0;
     overflow: hidden;
     background-color: #060607;
 }
@@ -487,8 +488,9 @@ body {
     position: absolute;
     inset: 0;
     background-repeat: no-repeat;
-    background-position: right center;
-    background-size: 65%;
+    background-color: #060607;
+    background-position: 417.983px -8.315px;
+    background-size: 86.238% 102.154%;
     opacity: 0;
     transition: opacity 1s ease-in-out;
     z-index: 1;
@@ -503,7 +505,7 @@ body {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.55) 35%, rgba(0, 0, 0, 0.15) 65%, rgba(0, 0, 0, 0.00) 100%);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.90) 0%, rgba(0, 0, 0, 0.00) 100%);
     z-index: 3;
 }
 
@@ -514,12 +516,12 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 1366px;
+    max-width: 1224px;
     z-index: 4;
     display: flex;
     align-items: center;
-    padding-left: 71px;
-    padding-right: 71px;
+    padding-left: 0;
+    padding-right: 0;
     opacity: 0;
     transition: opacity 1s ease-in-out;
     pointer-events: none;
@@ -592,12 +594,12 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 1366px;
+    max-width: 1224px;
     z-index: 6;
     display: flex;
     align-items: center;
     gap: 7px;
-    padding-left: 71px;
+    padding-left: 0;
 }
 
 .indicator {
@@ -628,12 +630,20 @@ body {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 177.78vh;
-    height: 100%;
-    min-width: 100%;
-    min-height: 56.25vw;
+    width: max(100vw, 177.78vh);
+    height: max(100vh, 56.25vw);
     transform: translate(-50%, -50%);
     pointer-events: none;
+}
+
+.hero-video-file {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
 }
 
 .line-break {
@@ -7015,12 +7025,14 @@ body {
 
 .rrhh-page {
     background: #FFFFFF;
+    font-family: var(--font-main);
 }
 
 .rrhh-container {
-    max-width: 1366px;
+    width: calc(100% - 142px);
+    max-width: 1224px;
     margin: 0 auto;
-    padding: 0 71px;
+    padding: 0;
 }
 
 /* ============================================================
@@ -7097,7 +7109,7 @@ body {
 
 .rrhh-hero-bold {
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 16px;
     font-weight: 700;
     line-height: 150%;
@@ -7106,7 +7118,7 @@ body {
 
 .rrhh-hero-text {
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 16px;
     font-weight: 400;
     line-height: 150%;
@@ -7116,7 +7128,7 @@ body {
 /* EMAIL â€” position absolute, 74px desde el fondo de la imagen */
 .rrhh-hero-email {
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 16px;
     font-weight: 700;
     line-height: 150%;
@@ -7138,9 +7150,10 @@ body {
 }
 
 .rrhh-form-section>.rrhh-container {
-    max-width: 1366px;
+    width: calc(100% - 142px);
+    max-width: 1224px;
     margin: 0 auto;
-    padding: 0 71px;
+    padding: 0;
 }
 
 /* ============================================================
@@ -7178,7 +7191,7 @@ body {
 
 .rrhh-field label {
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 16px;
     font-weight: 500;
     line-height: 150%;
@@ -7199,7 +7212,7 @@ body {
     border: 1px solid #D9D9D9;
     background: #FFFFFF;
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 14px;
     font-weight: 400;
     line-height: 150%;
@@ -7222,7 +7235,7 @@ body {
     border: 1px solid #D9D9D9;
     background: #FFFFFF;
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 14px;
     font-weight: 400;
     line-height: 150%;
@@ -7276,7 +7289,7 @@ body {
     border: 1px solid #D9D9D9;
     background: #FFFFFF;
     color: #101010;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 14px;
     font-weight: 400;
     line-height: 150%;
@@ -7320,7 +7333,7 @@ body {
     min-height: 20px;
     margin: 0;
     color: #D94B62;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 13px;
     font-weight: 500;
     line-height: 1.45;
@@ -7329,7 +7342,7 @@ body {
 .rrhh-file-hint {
     margin: 0;
     color: #101010;
-    font-family: Montserrat, sans-serif;
+    font-family: var(--font-main);
     font-size: 16px;
     font-weight: 500;
     line-height: 150%;
@@ -7375,7 +7388,7 @@ body {
     color: #1a7a4a;
     border-radius: 8px;
     padding: 16px 20px;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 15px;
     margin-bottom: 32px;
 }
@@ -7391,7 +7404,7 @@ body {
     background: rgba(28, 28, 30, 0.88);
     color: #FFFFFF;
     text-align: center;
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--font-main);
     font-size: 14px;
     font-weight: 500;
     line-height: 1.45;
@@ -7417,11 +7430,13 @@ body {
 
 @media (max-width: 1024px) {
     .rrhh-container {
-        padding: 0 40px;
+        width: calc(100% - 80px);
+        padding: 0;
     }
 
     .rrhh-form-section>.rrhh-container {
-        padding: 0 40px;
+        width: calc(100% - 80px);
+        padding: 0;
     }
 
     .rrhh-hero {
@@ -7431,11 +7446,13 @@ body {
 
 @media (max-width: 768px) {
     .rrhh-container {
-        padding: 0 24px;
+        width: calc(100% - 48px);
+        padding: 0;
     }
 
     .rrhh-form-section>.rrhh-container {
-        padding: 0 24px;
+        width: calc(100% - 48px);
+        padding: 0;
     }
 
     .rrhh-hero {

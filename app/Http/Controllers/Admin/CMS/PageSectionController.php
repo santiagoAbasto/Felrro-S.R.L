@@ -41,6 +41,46 @@ class PageSectionController extends Controller
         ]);
     }
 
+    public function update(Request $request, PageSection $pageSection)
+    {
+        $validated = $request->validate([
+            'page_id' => ['required', 'exists:pages,id'],
+            'type' => ['required', 'string', 'max:100'],
+            'title' => ['nullable', 'array'],
+            'title.es' => ['nullable', 'string', 'max:255'],
+            'title.en' => ['nullable', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'array'],
+            'subtitle.es' => ['nullable', 'string', 'max:255'],
+            'subtitle.en' => ['nullable', 'string', 'max:255'],
+            'content' => ['nullable', 'array'],
+            'content.es' => ['nullable', 'string'],
+            'content.en' => ['nullable', 'string'],
+            'button_text' => ['nullable', 'array'],
+            'button_text.es' => ['nullable', 'string', 'max:255'],
+            'button_text.en' => ['nullable', 'string', 'max:255'],
+            'button_link' => ['nullable', 'string', 'max:255'],
+            'order' => ['nullable', 'string', 'max:10'],
+            'is_active' => ['nullable', 'boolean'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            if ($pageSection->image && Storage::disk('public')->exists($pageSection->image)) {
+                Storage::disk('public')->delete($pageSection->image);
+            }
+
+            $validated['image'] = $request->file('image')->store('page-sections', 'public');
+        }
+
+        $validated['is_active'] = $request->boolean('is_active');
+
+        $pageSection->update($validated);
+
+        return redirect()
+            ->route('admin.page-sections.index')
+            ->with('success', 'Sección actualizada correctamente.');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | 2️⃣ HERO GLOBAL
@@ -92,6 +132,11 @@ class PageSectionController extends Controller
             'button_link'    => 'nullable|string|max:255',
             'is_active'      => 'boolean',
             'images.*'       => 'nullable|image|max:4096',
+            'slides'         => 'nullable|array',
+            'slides.*.media_type' => 'required_with:slides|in:image,video',
+            'slides.*.image'      => 'nullable|image|max:4096',
+            'slides.*.video_file' => 'nullable|file|mimes:mp4,mov,webm|max:102400',
+            'slides.*.video_url'  => 'nullable|string|max:500',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -111,8 +156,46 @@ class PageSectionController extends Controller
                 'is_active'   => $request->boolean('is_active', true),
             ]);
 
-            if ($request->hasFile('images')) {
-                $order = 1;
+            $order = 1;
+
+            if ($request->filled('slides')) {
+                foreach ($request->input('slides', []) as $index => $slide) {
+                    $mediaType = $slide['media_type'] ?? 'image';
+
+                    if ($mediaType === 'video') {
+                        $videoFile = $request->file("slides.$index.video_file");
+                        $videoUrl = $slide['video_url'] ?? null;
+
+                        if ($videoFile) {
+                            $path = $videoFile->store('page-sections/hero/videos', 'public');
+                            $section->images()->create([
+                                'image'      => $path,
+                                'order'      => $order++,
+                                'media_type' => 'video',
+                                'video_url'  => null,
+                            ]);
+                        } elseif (!empty($videoUrl)) {
+                            $section->images()->create([
+                                'image'      => '',
+                                'order'      => $order++,
+                                'media_type' => 'video',
+                                'video_url'  => $this->normalizeVideoUrl($videoUrl),
+                            ]);
+                        }
+
+                        continue;
+                    }
+
+                    $file = $request->file("slides.$index.image");
+                    if (!$file) continue;
+                    $path = $file->store('page-sections/hero', 'public');
+                    $section->images()->create([
+                        'image'      => $path,
+                        'order'      => $order++,
+                        'media_type' => 'image',
+                    ]);
+                }
+            } elseif ($request->hasFile('images')) {
                 foreach ($request->file('images') as $file) {
                     if (!$file) continue;
                     $path = $file->store('page-sections/hero', 'public');
@@ -161,7 +244,11 @@ class PageSectionController extends Controller
             'button_text.es'               => 'nullable|string|max:255',
             'button_text.en'               => 'nullable|string|max:255',
             'button_link'                  => 'nullable|string|max:255',
+            'is_active'                    => 'boolean',
             'images.*'                     => 'nullable|image|max:4096',
+            'video_files.*'                => 'nullable|file|mimes:mp4,mov,webm|max:102400',
+            'video_urls.*'                 => 'nullable|string|max:500',
+            'new_video_url'                => 'nullable|string|max:500',
             'deleted_images'               => 'nullable|array',
             'deleted_images.*'             => 'integer|exists:page_section_images,id',
             // Per-slide content
@@ -176,6 +263,8 @@ class PageSectionController extends Controller
             'slide_data.*.button_link'     => 'nullable|string|max:255',
             'slide_data.*.media_type'      => 'nullable|in:image,video',
             'slide_data.*.video_url'       => 'nullable|string|max:500',
+            'slide_data.*.image_file'      => 'nullable|image|max:4096',
+            'slide_data.*.video_file'      => 'nullable|file|mimes:mp4,mov,webm|max:102400',
         ]);
 
         DB::transaction(function () use ($request, $section) {
@@ -210,21 +299,79 @@ class PageSectionController extends Controller
                 }
             }
 
+            // Subir nuevos videos locales
+            if ($request->hasFile('video_files')) {
+                foreach ($request->file('video_files') as $file) {
+                    if (!$file) continue;
+
+                    $path = $file->store('page-sections/hero/videos', 'public');
+                    $maxOrder = $section->images()->max('order') ?? 0;
+
+                    $section->images()->create([
+                        'image'      => $path,
+                        'order'      => $maxOrder + 1,
+                        'media_type' => 'video',
+                        'video_url'  => null,
+                    ]);
+                }
+            }
+
+            // Crear nuevos videos embebidos
+            $newVideoUrls = array_filter([
+                ...$request->input('video_urls', []),
+                $request->input('new_video_url'),
+            ]);
+
+            foreach ($newVideoUrls as $videoUrl) {
+                if (!$videoUrl) continue;
+
+                $maxOrder = $section->images()->max('order') ?? 0;
+
+                $section->images()->create([
+                    'image'      => '',
+                    'order'      => $maxOrder + 1,
+                    'media_type' => 'video',
+                    'video_url'  => $this->normalizeVideoUrl($videoUrl),
+                ]);
+            }
+
             // Actualizar contenido por slide
-            foreach ($request->input('slide_data', []) as $slideData) {
+            foreach ($request->input('slide_data', []) as $index => $slideData) {
                 $slideId = $slideData['id'] ?? null;
                 if (!$slideId) continue;
 
                 $slide = $section->images()->find($slideId);
                 if (!$slide) continue;
 
+                $mediaType = $slideData['media_type'] ?? 'image';
+                $imageFile = $request->file("slide_data.$index.image_file");
+                $videoFile = $request->file("slide_data.$index.video_file");
+                $storedMediaPath = $slide->image;
+
+                if ($imageFile) {
+                    if ($slide->image) {
+                        Storage::disk('public')->delete($slide->image);
+                    }
+
+                    $storedMediaPath = $imageFile->store('page-sections/hero', 'public');
+                    $mediaType = 'image';
+                } elseif ($videoFile) {
+                    if ($slide->image) {
+                        Storage::disk('public')->delete($slide->image);
+                    }
+
+                    $storedMediaPath = $videoFile->store('page-sections/hero/videos', 'public');
+                    $mediaType = 'video';
+                }
+
                 $slide->update([
                     'title'       => $slideData['title'] ?? null,
                     'subtitle'    => $slideData['subtitle'] ?? null,
                     'button_text' => $slideData['button_text'] ?? null,
                     'button_link' => $slideData['button_link'] ?? null,
-                    'media_type'  => $slideData['media_type'] ?? 'image',
-                    'video_url'   => !empty($slideData['video_url'])
+                    'image'       => $storedMediaPath,
+                    'media_type'  => $mediaType,
+                    'video_url'   => $mediaType === 'video' && !empty($slideData['video_url'])
                                      ? $this->normalizeVideoUrl($slideData['video_url'])
                                      : null,
                 ]);
@@ -237,6 +384,7 @@ class PageSectionController extends Controller
                 'content'     => $request->input('content', $section->content),
                 'button_text' => $request->input('button_text', $section->button_text),
                 'button_link' => $request->input('button_link', $section->button_link),
+                'is_active'   => $request->boolean('is_active', $section->is_active),
             ]);
         });
 
@@ -500,7 +648,11 @@ class PageSectionController extends Controller
     {
         if (!$url) return null;
 
-        if (preg_match('/youtu\.be\/([^\?]+)/', $url, $matches)) {
+        if (preg_match('/youtu\.be\/([^?&\/]+)/', $url, $matches)) {
+            return 'https://www.youtube.com/embed/' . $matches[1];
+        }
+
+        if (preg_match('/youtube\.com\/shorts\/([^?&\/]+)/', $url, $matches)) {
             return 'https://www.youtube.com/embed/' . $matches[1];
         }
 
