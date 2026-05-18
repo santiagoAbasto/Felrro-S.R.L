@@ -23,11 +23,14 @@
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v={{ $faviconIcoVersion }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon/apple-touch-icon.png') }}?v={{ $appleTouchIconVersion }}">
     <link rel="manifest" href="{{ asset('favicon/site.webmanifest') }}?v={{ $manifestVersion }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
 
     @routes   {{-- 🔥 ESTO ES LO QUE FALTA --}}
 
     @viteReactRefresh
-    @vite(['resources/js/app.jsx', 'resources/css/app.css'])
+    @vite(['resources/js/app.jsx'])
 
     @inertiaHead
 </head>

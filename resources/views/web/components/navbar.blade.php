@@ -4,7 +4,7 @@
         <!-- LOGO -->
         <div class="logo">
             <a href="{{ route('home') }}">
-                <img src="{{ asset('images/logo.png') }}" alt="Felrro">
+                <img src="{{ asset('images/logo.png') }}" alt="Felrro" fetchpriority="high" decoding="async">
             </a>
         </div>
 

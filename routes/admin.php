@@ -261,9 +261,6 @@ Route::prefix('admin')
             Route::post('/newsletter/send', [AdminNewsletterController::class, 'send'])
                 ->name('newsletter.send');
 
-            Route::get('/newsletter/create', [AdminNewsletterController::class, 'create'])
-                ->name('newsletter.create');
-
             Route::post('/newsletter', [AdminNewsletterController::class, 'store'])
                 ->name('newsletter.store');
 

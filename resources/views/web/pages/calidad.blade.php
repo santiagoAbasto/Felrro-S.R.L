@@ -82,7 +82,7 @@ $main = $page?->sections->where('type','calidad_main')->first();
             {{-- RIGHT COLUMN --}}
             <div class="calidad-right">
                 @if($main->image)
-                <img src="{{ asset('storage/'.$main->image) }}" alt="Calidad">
+                <img src="{{ $main->image_url }}" alt="Calidad" loading="lazy" decoding="async">
                 @endif
             </div>
 
@@ -116,7 +116,9 @@ $main = $page?->sections->where('type','calidad_main')->first();
                         <div class="calidad-cert-logo">
                             <img
                                 src="{{ asset('storage/'.$certificate->image_logo) }}"
-                                alt="{{ $certificate->getNameLocale() }}">
+                                alt="{{ $certificate->getNameLocale() }}"
+                                loading="lazy"
+                                decoding="async">
                         </div>
                         @endif
 

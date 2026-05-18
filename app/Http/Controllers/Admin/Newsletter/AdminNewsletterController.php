@@ -28,9 +28,14 @@ class AdminNewsletterController extends Controller
     }
     public function toggle(NewsletterSubscriber $subscriber)
     {
-        $subscriber->update([
-            'is_active' => !$subscriber->is_active
-        ]);
+        if ($subscriber->is_active) {
+            $subscriber->update([
+                'is_active' => false,
+                'unsubscribed_at' => null,
+            ]);
+        } else {
+            $subscriber->markSubscribed();
+        }
 
         return back();
     }
@@ -52,11 +57,13 @@ class AdminNewsletterController extends Controller
             'message' => 'required|string'
         ]);
 
-        $emails = NewsletterSubscriber::active()->pluck('email');
+        $subscribers = NewsletterSubscriber::active()->get();
 
-        foreach ($emails as $email) {
-            Mail::to($email)->send(
-                new NewsletterMail($request->subject, $request->message)
+        foreach ($subscribers as $subscriber) {
+            $subscriber->ensureUnsubscribeToken();
+
+            Mail::to($subscriber->email)->send(
+                new NewsletterMail($request->subject, $request->message, $subscriber)
             );
         }
 
@@ -70,11 +77,13 @@ class AdminNewsletterController extends Controller
             'message' => 'required|string'
         ]);
 
-        $emails = NewsletterSubscriber::active()->pluck('email');
+        $subscribers = NewsletterSubscriber::active()->get();
 
-        foreach ($emails as $email) {
-            Mail::to($email)->send(
-                new NewsletterMail($request->subject, $request->message)
+        foreach ($subscribers as $subscriber) {
+            $subscriber->ensureUnsubscribeToken();
+
+            Mail::to($subscriber->email)->send(
+                new NewsletterMail($request->subject, $request->message, $subscriber)
             );
         }
 

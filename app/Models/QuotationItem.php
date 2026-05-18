@@ -9,11 +9,13 @@ class QuotationItem extends Model
     protected $fillable = [
         'quotation_id',
         'product_id',
-        'metros'
+        'metros',
+        'variant_snapshot',
     ];
 
     protected $casts = [
         'metros' => 'integer',
+        'variant_snapshot' => 'array',
     ];
 
     /*

@@ -174,8 +174,14 @@ return [
     'select_sector'       => 'Sector',
     'upload_cv'           => 'Curriculum Vitae',
     'upload_cover_letter' => 'Cover letter',
+    'upload_cv_required'  => 'Upload your Curriculum Vitae.',
+    'upload_cover_letter_required' => 'Upload your cover letter.',
+    'upload_allowed_files' => 'Only PDF or Word files (.doc, .docx) are allowed.',
+    'upload_max_size'     => 'The file cannot be larger than 10 MB.',
+    'upload_file_hint'    => 'Allowed format: PDF or Word. Maximum size: 10 MB.',
     'select_file'         => 'Select file',
     'apply_now'           => 'Submit application',
+    'rrhh_file_validation_toast' => 'Review the attached files to continue.',
     'application_sent_successfully' => 'Your application has been successfully submitted. We will contact you soon.',
 
     /*

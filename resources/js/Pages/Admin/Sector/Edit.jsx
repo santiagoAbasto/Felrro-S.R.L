@@ -2,13 +2,14 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import SectorForm from "./SectorForm";
 
-export default function Edit({ sector }) {
+export default function Edit({ sector, products }) {
 
     const { data, setData, put, processing, errors } = useForm({
         name: sector.name ?? { es: "", en: "" },
         description: sector.description ?? { es: "", en: "" },
         order: sector.order ?? "",
         image: null, // 🔥 no enviar string existente
+        related_product_ids: sector.related_products?.map((product) => product.id) ?? [],
         is_active: sector.is_active ?? true
     });
 
@@ -55,6 +56,7 @@ export default function Edit({ sector }) {
                         submit={submit}
                         processing={processing}
                         errors={errors}
+                        products={products}
                         buttonText="Actualizar Sector"
                         currentImage={sector.image}
                     />

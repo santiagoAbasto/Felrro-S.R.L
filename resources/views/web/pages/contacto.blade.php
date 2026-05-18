@@ -34,7 +34,16 @@
                 @endif
 
                 @if($info && $info->content)
-                @php $content = $info->content; @endphp
+                @php
+                    $content = $info->content;
+                    $emails = collect($content['emails'] ?? [])
+                        ->filter(fn ($email) => filled($email))
+                        ->values();
+
+                    if ($emails->isEmpty() && !empty($content['email'])) {
+                        $emails = collect([$content['email']]);
+                    }
+                @endphp
 
                 <div class="contacto-data">
 
@@ -66,19 +75,19 @@
                     </div>
                     @endif
 
-                    @if(!empty($content['email']))
+                    @foreach($emails as $email)
                     <div class="contacto-data-item">
                         <span class="contacto-data-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                                 <path d="M22 7L13.009 12.727C12.7039 12.9042 12.3573 12.9976 12.0045 12.9976C11.6517 12.9976 11.3051 12.9042 11 12.727L2 7M4 4H20C21.1046 4 22 4.89543 22 6V18C22 19.1046 21.1046 20 20 20H4C2.89543 20 2 19.1046 2 18V6C2 4.89543 2.89543 4 4 4Z" stroke="#25A7CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </span>
-                        <a href="mailto:{{ $content['email'] }}"
+                        <a href="mailto:{{ $email }}"
                            class="contacto-data-text contacto-data-link">
-                            {{ $content['email'] }}
+                            {{ $email }}
                         </a>
                     </div>
-                    @endif
+                    @endforeach
 
                 </div>
                 @endif
@@ -101,7 +110,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('contacto.store') }}" method="POST" class="contacto-form">
+                <form action="{{ route('contacto.store') }}" method="POST" class="contacto-form" id="contactForm">
                     @csrf
 
                     <div class="contacto-form-row">
@@ -145,7 +154,7 @@
                             <span class="contacto-required-note">
                                 *{{ __('messages.required_fields') ?? 'Campos Obligatorios' }}
                             </span>
-                            <button type="submit" class="contacto-btn-enviar">
+                            <button type="submit" class="contacto-btn-enviar" id="contactSubmitButton">
                                 {{ __('messages.send') ?? 'Enviar' }}
                             </button>
                         </div>
@@ -164,5 +173,22 @@
 
     </div>
 </section>
+
+<script>
+    (function () {
+        var contactForm = document.getElementById('contactForm');
+        var contactSubmitButton = document.getElementById('contactSubmitButton');
+
+        if (!contactForm || !contactSubmitButton) {
+            return;
+        }
+
+        contactForm.addEventListener('submit', function () {
+            contactSubmitButton.disabled = true;
+            contactSubmitButton.setAttribute('aria-disabled', 'true');
+            contactSubmitButton.textContent = 'Enviando...';
+        });
+    })();
+</script>
 
 @endsection

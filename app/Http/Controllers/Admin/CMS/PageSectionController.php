@@ -533,6 +533,18 @@ class PageSectionController extends Controller
 
     public function updateContacto(Request $request)
     {
+        $normalizedEmails = collect($request->input('info.emails', []))
+            ->map(fn ($email) => is_string($email) ? trim($email) : '')
+            ->filter()
+            ->values()
+            ->all();
+
+        $request->merge([
+            'info' => array_merge($request->input('info', []), [
+                'emails' => $normalizedEmails,
+            ]),
+        ]);
+
         /*
     |--------------------------------------------------------------------------
     | VALIDACIÓN
@@ -551,7 +563,8 @@ class PageSectionController extends Controller
             'info.address.es'      => 'required|string',
             'info.address.en'      => 'required|string',
             'info.phone'           => 'required|string|max:255',
-            'info.email'           => 'required|email|max:255',
+            'info.emails'          => 'required|array|min:1',
+            'info.emails.*'        => 'required|email|max:255|distinct',
             'info.schedule.es'     => 'nullable|string',
             'info.schedule.en'     => 'nullable|string',
             'info.is_active'       => 'nullable|boolean',
@@ -561,14 +574,28 @@ class PageSectionController extends Controller
                 'required',
                 'string',
                 function ($attribute, $value, $fail) {
-                    // Only allow Google Maps and Mapbox embed iframes
-                    if (!preg_match('/<iframe[^>]+(src=["\'](https:\/\/(www\.)?google\.com\/maps|https:\/\/api\.mapbox\.com|https:\/\/embed\.maps\.arcgis\.com)[^"\']*["\'][^>]*>.*?<\/iframe>/is', $value)) {
-                        // If not a full iframe, try to validate just the src attribute
-                        if (!preg_match('/(https:\/\/(www\.)?google\.com\/maps|https:\/\/api\.mapbox\.com|https:\/\/embed\.maps\.arcgis\.com)/i', $value)) {
-                            $fail('El iframe debe ser de Google Maps, Mapbox o ArcGIS.');
-                        }
+                    $allowedHosts = [
+                        'www.google.com',
+                        'google.com',
+                        'www.google.com.ar',
+                        'google.com.ar',
+                        'maps.google.com',
+                        'api.mapbox.com',
+                        'embed.maps.arcgis.com',
+                    ];
+
+                    if (!preg_match('/<iframe\b[^>]*\bsrc=["\']([^"\']+)["\'][^>]*>.*?<\/iframe>/is', $value, $matches)) {
+                        $fail('El mapa debe ser un iframe válido.');
+                        return;
                     }
-                    // Additional security: strip any script tags or event handlers
+
+                    $src = $matches[1] ?? '';
+                    $host = parse_url($src, PHP_URL_HOST);
+
+                    if (!is_string($host) || !in_array(strtolower($host), $allowedHosts, true)) {
+                        $fail('El iframe debe ser de Google Maps, Mapbox o ArcGIS.');
+                    }
+
                     if (preg_match('/<script|on\w+\s*=/i', $value)) {
                         $fail('El iframe no puede contener scripts o manejadores de eventos.');
                     }
@@ -616,7 +643,8 @@ class PageSectionController extends Controller
                     'content' => [
                         'address'  => $validated['info']['address'],
                         'phone'    => $validated['info']['phone'],
-                        'email'    => $validated['info']['email'],
+                        'email'    => $validated['info']['emails'][0],
+                        'emails'   => $validated['info']['emails'],
                         'schedule' => $validated['info']['schedule'] ?? ['es' => null, 'en' => null],
                     ],
                     'is_active' => $validated['info']['is_active'] ?? true,

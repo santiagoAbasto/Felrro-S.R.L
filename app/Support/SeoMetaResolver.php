@@ -63,7 +63,7 @@ class SeoMetaResolver
             return null;
         }
 
-        return SeoMeta::query()->where('page', $key)->first();
+        return SeoMeta::rememberByPage($key);
     }
 
     private static function seoTableExists(): bool

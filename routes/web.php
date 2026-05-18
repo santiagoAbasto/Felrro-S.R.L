@@ -56,7 +56,7 @@ Route::get('/novedades/{slug}', [PostController::class, 'show'])->name('novedade
 */
 Route::get('/rrhh', [PageController::class, 'rrhh'])->name('rrhh');
 Route::post('/rrhh', [JobApplicationController::class, 'store'])
-    ->middleware('throttle:5,60')  // 5 submissions per minute
+    ->middleware('throttle:5,1')  // 5 submissions per minute
     ->name('rrhh.store');
 
 /*
@@ -66,7 +66,7 @@ Route::post('/rrhh', [JobApplicationController::class, 'store'])
 */
 Route::get('/contacto', [PageController::class, 'contacto'])->name('contacto');
 Route::post('/contacto', [ContactMessageController::class, 'store'])
-    ->middleware('throttle:5,60')  // 5 contact forms per minute
+    ->middleware('throttle:30,1')  // 30 contact forms per minute
     ->name('contacto.store');
 
 /*
@@ -79,14 +79,14 @@ Route::get('/cotizacion', [PageController::class, 'cotizacion'])->name('cotizaci
 Route::post('/cotizacion/add/{product}', [PageController::class, 'addToQuotation'])
     ->name('cotizacion.add');
 
-Route::post('/cotizacion/remove/{product}', [PageController::class, 'removeFromQuotation'])
+Route::post('/cotizacion/remove/{itemKey}', [PageController::class, 'removeFromQuotation'])
     ->name('cotizacion.remove');
 
-Route::post('/cotizacion/update/{product}', [PageController::class, 'updateQuotation'])
+Route::post('/cotizacion/update/{itemKey}', [PageController::class, 'updateQuotation'])
     ->name('cotizacion.update');
 
 Route::post('/cotizacion/send', [PageController::class, 'sendQuotation'])
-    ->middleware('throttle:5,60')  // 5 quotation requests per minute
+    ->middleware('throttle:30,1')  // 30 quotation requests per minute
     ->name('cotizacion.send');
 
 /*
@@ -96,8 +96,11 @@ Route::post('/cotizacion/send', [PageController::class, 'sendQuotation'])
 */
 
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
-    ->middleware('throttle:10,60')  // 10 subscriptions per minute
+    ->middleware('throttle:10,1')  // 10 subscriptions per minute
     ->name('newsletter.subscribe');
+
+Route::match(['get', 'post'], '/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])
+    ->name('newsletter.unsubscribe');
 
 /*
 |--------------------------------------------------------------------------

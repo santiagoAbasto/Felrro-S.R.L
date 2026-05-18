@@ -4,7 +4,14 @@
 ========================================================= --}}
 @php
 $locale = app()->getLocale();
-$footer = \App\Models\SiteSetting::getRaw('footer');
+$footer = $footerSettings ?? [];
+$footerEmails = collect($footer['emails'] ?? [])
+    ->filter(fn ($email) => filled($email))
+    ->values();
+
+if ($footerEmails->isEmpty() && !empty($footer['email'])) {
+    $footerEmails = collect([$footer['email']]);
+}
 @endphp
 
 <footer class="footer">
@@ -12,7 +19,7 @@ $footer = \App\Models\SiteSetting::getRaw('footer');
 
         {{-- LOGO --}}
         <div class="footer-col--logo">
-            <img src="{{ asset('images/logo.png') }}" alt="Felrro" class="footer-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Felrro" class="footer-logo" loading="lazy" decoding="async">
         </div>
 
         {{-- SECCIONES --}}
@@ -42,7 +49,7 @@ $footer = \App\Models\SiteSetting::getRaw('footer');
         {{-- NEWSLETTER --}}
         <div class="footer-col--newsletter">
             <h4 class="footer-heading">
-                {{ __('messages.newsletter_subscribe') }}
+                {{ $footer['newsletter_title'][$locale] ?? __('messages.newsletter_subscribe') }}
             </h4>
 
             <form
@@ -93,15 +100,17 @@ $footer = \App\Models\SiteSetting::getRaw('footer');
                 </a>
             </div>
 
-            {{-- EMAIL --}}
-            <div class="footer-contact-item">
-                <a href="mailto:{{ $footer['email'] ?? '' }}" class="footer-contact-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" class="footer-contact-icon">
-                        <path d="M22 7L13.009 12.727C12.7039 12.9042 12.3573 12.9976 12.0045 12.9976C11.6517 12.9976 11.3051 12.9042 11 12.727L2 7M4 4H20C21.1046 4 22 4.89543 22 6V18C22 19.1046 21.1046 20 20 20H4C2.89543 20 2 19.1046 2 18V6C2 4.89543 2.89543 4 4 4Z" stroke="#25A7CA" stroke-width="2"/>
-                    </svg>
-                    <span>{{ $footer['email'] ?? '' }}</span>
-                </a>
-            </div>
+            {{-- EMAILS --}}
+            @foreach($footerEmails as $email)
+                <div class="footer-contact-item">
+                    <a href="mailto:{{ $email }}" class="footer-contact-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" class="footer-contact-icon">
+                            <path d="M22 7L13.009 12.727C12.7039 12.9042 12.3573 12.9976 12.0045 12.9976C11.6517 12.9976 11.3051 12.9042 11 12.727L2 7M4 4H20C21.1046 4 22 4.89543 22 6V18C22 19.1046 21.1046 20 20 20H4C2.89543 20 2 19.1046 2 18V6C2 4.89543 2.89543 4 4 4Z" stroke="#25A7CA" stroke-width="2"/>
+                        </svg>
+                        <span>{{ $email }}</span>
+                    </a>
+                </div>
+            @endforeach
 
         </div>
     </div>
@@ -125,8 +134,11 @@ $footer = \App\Models\SiteSetting::getRaw('footer');
 document.addEventListener("DOMContentLoaded", function () {
     const form  = document.getElementById('newsletterForm');
     const toast = document.getElementById('newsletter-toast');
+    const button = document.getElementById('newsletterBtn');
+    const defaultToastMessage = '¡Te suscribiste correctamente!';
 
-    function showToast() {
+    function showToast(message = defaultToastMessage) {
+        toast.textContent = message;
         toast.style.display = 'block';
         toast.classList.add('show');
         setTimeout(() => {
@@ -141,9 +153,17 @@ document.addEventListener("DOMContentLoaded", function () {
         form.addEventListener('submit', function (e) {
             e.preventDefault();
 
+            if (button?.disabled) {
+                return;
+            }
+
             const data     = new FormData(form);
             const token    = document.querySelector('meta[name="csrf-token"]')?.content
                           || data.get('_token');
+
+            if (button) {
+                button.disabled = true;
+            }
 
             fetch(form.action, {
                 method: 'POST',
@@ -153,14 +173,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 body: data,
             })
-            .then(res => res.json())
+            .then(async res => {
+                const json = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    const message =
+                        json.message ||
+                        json.errors?.email?.[0] ||
+                        'No pudimos procesar la suscripción. Intentá nuevamente en unos minutos.';
+
+                    throw new Error(message);
+                }
+
+                return json;
+            })
             .then(json => {
                 if (json.success) {
                     form.reset();
-                    showToast();
+                    showToast(json.message || defaultToastMessage);
                 }
             })
-            .catch(() => showToast());
+            .catch(error => showToast(error.message || 'No pudimos procesar la suscripción. Intentá nuevamente en unos minutos.'))
+            .finally(() => {
+                if (button) {
+                    button.disabled = false;
+                }
+            });
         });
     }
 });

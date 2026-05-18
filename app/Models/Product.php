@@ -52,8 +52,9 @@ class Product extends Model
     protected static function booted()
     {
         static::creating(function ($product) {
-
-            $product->slug = self::generateUniqueSlug($product->name['es']);
+            if (empty($product->slug)) {
+                $product->slug = self::generateUniqueSlug($product->name['es'] ?? '');
+            }
 
             if ($product->featured && empty($product->featured_order)) {
                 $product->featured_order = self::nextFeaturedOrder();
@@ -119,6 +120,12 @@ class Product extends Model
     public function quotationItems()
     {
         return $this->hasMany(QuotationItem::class);
+    }
+
+    public function sectors()
+    {
+        return $this->belongsToMany(Sector::class, 'product_sector')
+            ->withTimestamps();
     }
 
     /* =======================================================
@@ -193,7 +200,7 @@ class Product extends Model
 
     public static function generateUniqueSlug(string $name, $ignoreId = null): string
     {
-        $slug = Str::slug($name);
+        $slug = self::safeSlug($name);
         $original = $slug;
         $count = 1;
 
@@ -207,6 +214,45 @@ class Product extends Model
         }
 
         return $slug;
+    }
+
+    private static function safeSlug(string $value): string
+    {
+        $normalized = trim($value);
+
+        if ($normalized === '') {
+            return 'producto';
+        }
+
+        $normalized = strtr($normalized, [
+            'Á' => 'A', 'À' => 'A', 'Ä' => 'A', 'Â' => 'A',
+            'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a',
+            'É' => 'E', 'È' => 'E', 'Ë' => 'E', 'Ê' => 'E',
+            'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+            'Í' => 'I', 'Ì' => 'I', 'Ï' => 'I', 'Î' => 'I',
+            'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+            'Ó' => 'O', 'Ò' => 'O', 'Ö' => 'O', 'Ô' => 'O',
+            'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+            'Ú' => 'U', 'Ù' => 'U', 'Ü' => 'U', 'Û' => 'U',
+            'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+            'Ñ' => 'N', 'ñ' => 'n',
+        ]);
+
+        try {
+            $slug = Str::slug($normalized);
+        } catch (\Throwable) {
+            $slug = '';
+        }
+
+        if (!is_string($slug) || trim($slug) === '') {
+            $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $normalized);
+            $ascii = is_string($ascii) && $ascii !== '' ? $ascii : $normalized;
+            $slug = strtolower($ascii);
+            $slug = preg_replace('/[^a-z0-9]+/i', '-', $slug) ?? '';
+            $slug = trim($slug, '-');
+        }
+
+        return $slug !== '' ? $slug : 'producto';
     }
 
     /* =======================================================

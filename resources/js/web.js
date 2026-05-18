@@ -1,2 +1,1 @@
- 
-import '../css/web.css';
+// Entry point reservado para JS de la web pública.

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Support\MediaPath;
 
 class PageSectionImage extends Model
 {
@@ -33,7 +34,7 @@ class PageSectionImage extends Model
 
     public function getImageUrlAttribute(): string
     {
-        return asset('storage/' . $this->image);
+        return MediaPath::imageAsset($this->image, asset('images/logo.png'));
     }
 
     public function isVideo(): bool

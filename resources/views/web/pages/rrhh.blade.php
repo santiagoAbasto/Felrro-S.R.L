@@ -75,6 +75,10 @@ $locale = app()->getLocale();
                 </div>
             @endif
 
+            <div id="rrhh-file-toast" class="rrhh-file-toast" aria-live="polite">
+                {{ __('messages.rrhh_file_validation_toast') }}
+            </div>
+
             <form action="{{ route('rrhh.store') }}"
                   method="POST"
                   enctype="multipart/form-data"
@@ -209,7 +213,7 @@ $locale = app()->getLocale();
                     {{-- CV --}}
                     <div class="rrhh-field">
                         <label>{{ __('messages.upload_cv') }}<span>*</span></label>
-                        <input type="file" id="cv_input" name="cv_path" accept=".pdf,.doc,.docx" required>
+                        <input type="file" id="cv_input" name="cv_path" required>
                         <label for="cv_input" class="rrhh-file-label">
                             <span id="cv_filename">{{ __('messages.upload_cv') }}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -219,12 +223,16 @@ $locale = app()->getLocale();
                                 <path d="M15 15L12 12L9 15" stroke="#25A7CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </label>
+                        <p class="rrhh-file-hint">{{ __('messages.upload_file_hint') }}</p>
+                        <p id="cv_error" class="rrhh-file-error" aria-live="polite">
+                            {{ $errors->first('cv_path') }}
+                        </p>
                     </div>
 
                     {{-- CARTA DE PRESENTACIÓN --}}
                     <div class="rrhh-field">
-                        <label>{{ __('messages.upload_cover_letter') }}</label>
-                        <input type="file" id="carta_input" name="cover_letter_path" accept=".pdf,.doc,.docx">
+                        <label>{{ __('messages.upload_cover_letter') }}<span>*</span></label>
+                        <input type="file" id="carta_input" name="cover_letter_path" required>
                         <label for="carta_input" class="rrhh-file-label">
                             <span id="carta_filename">{{ __('messages.upload_cover_letter') }}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -234,6 +242,10 @@ $locale = app()->getLocale();
                                 <path d="M15 15L12 12L9 15" stroke="#25A7CA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </label>
+                        <p class="rrhh-file-hint">{{ __('messages.upload_file_hint') }}</p>
+                        <p id="carta_error" class="rrhh-file-error" aria-live="polite">
+                            {{ $errors->first('cover_letter_path') }}
+                        </p>
                     </div>
 
                 </div>
@@ -254,34 +266,146 @@ $locale = app()->getLocale();
 
 {{-- JS --}}
 <script>
-// Fecha
-document.querySelector('.rrhh-form').addEventListener('submit', function() {
-    const day   = document.getElementById('birth_day').value;
-    const month = document.getElementById('birth_month').value;
-    const year  = document.getElementById('birth_year').value;
-    if (day && month && year) {
-        document.getElementById('fecha_nacimiento').value =
-            `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    }
-});
+const rrhhForm = document.querySelector('.rrhh-form');
 
-// Nombre de archivo CV
-document.getElementById('cv_input').addEventListener('change', function() {
-    const span = document.getElementById('cv_filename');
-    if (this.files && this.files[0]) {
-        span.textContent = this.files[0].name;
-        span.classList.add('has-file');
-    }
-});
+if (rrhhForm) {
+    const rrhhToast = document.getElementById('rrhh-file-toast');
+    const rrhhMessages = {{ Illuminate\Support\Js::from([
+        'toast' => __('messages.rrhh_file_validation_toast'),
+        'cvDefault' => __('messages.upload_cv'),
+        'coverDefault' => __('messages.upload_cover_letter'),
+        'cvRequired' => __('messages.upload_cv_required'),
+        'coverRequired' => __('messages.upload_cover_letter_required'),
+        'allowedFiles' => __('messages.upload_allowed_files'),
+        'maxSize' => __('messages.upload_max_size'),
+    ]) }};
+    const allowedExtensions = ['pdf', 'doc', 'docx'];
+    const maxFileSize = 10 * 1024 * 1024;
+    const fileFields = [
+        {
+            input: document.getElementById('cv_input'),
+            filename: document.getElementById('cv_filename'),
+            error: document.getElementById('cv_error'),
+            label: document.querySelector('label[for="cv_input"]'),
+            defaultText: rrhhMessages.cvDefault,
+            requiredMessage: rrhhMessages.cvRequired,
+        },
+        {
+            input: document.getElementById('carta_input'),
+            filename: document.getElementById('carta_filename'),
+            error: document.getElementById('carta_error'),
+            label: document.querySelector('label[for="carta_input"]'),
+            defaultText: rrhhMessages.coverDefault,
+            requiredMessage: rrhhMessages.coverRequired,
+        }
+    ];
+    let rrhhToastTimeout;
 
-// Nombre de archivo Carta
-document.getElementById('carta_input').addEventListener('change', function() {
-    const span = document.getElementById('carta_filename');
-    if (this.files && this.files[0]) {
-        span.textContent = this.files[0].name;
-        span.classList.add('has-file');
-    }
-});
+    const updateBirthDateField = () => {
+        const day = document.getElementById('birth_day').value;
+        const month = document.getElementById('birth_month').value;
+        const year = document.getElementById('birth_year').value;
+
+        if (day && month && year) {
+            document.getElementById('fecha_nacimiento').value =
+                `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    };
+
+    const showToast = (message) => {
+        if (!rrhhToast) {
+            return;
+        }
+
+        rrhhToast.textContent = message;
+        rrhhToast.classList.add('show');
+        window.clearTimeout(rrhhToastTimeout);
+        rrhhToastTimeout = window.setTimeout(() => {
+            rrhhToast.classList.remove('show');
+        }, 3200);
+    };
+
+    const getExtension = (fileName) => {
+        const parts = fileName.split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    };
+
+    const isAllowedFile = (file) => allowedExtensions.includes(getExtension(file.name));
+    const isAllowedSize = (file) => file.size <= maxFileSize;
+
+    const clearFieldError = (field) => {
+        field.error.textContent = '';
+        field.label.classList.remove('is-invalid');
+    };
+
+    const setFieldError = (field, message) => {
+        field.error.textContent = message;
+        field.label.classList.add('is-invalid');
+    };
+
+    const updateFileName = (field) => {
+        const file = field.input.files && field.input.files[0] ? field.input.files[0] : null;
+
+        if (file) {
+            field.filename.textContent = file.name;
+            field.filename.classList.add('has-file');
+            return;
+        }
+
+        field.filename.textContent = field.defaultText;
+        field.filename.classList.remove('has-file');
+    };
+
+    fileFields.forEach((field) => {
+        updateFileName(field);
+        field.input.addEventListener('change', () => {
+            updateFileName(field);
+            clearFieldError(field);
+        });
+    });
+
+    rrhhForm.addEventListener('submit', (event) => {
+        updateBirthDateField();
+
+        let hasInvalidFiles = false;
+
+        fileFields.forEach((field) => {
+            clearFieldError(field);
+
+            const file = field.input.files && field.input.files[0] ? field.input.files[0] : null;
+
+            if (!file) {
+                setFieldError(field, field.requiredMessage);
+                hasInvalidFiles = true;
+                return;
+            }
+
+            if (!isAllowedFile(file)) {
+                setFieldError(field, rrhhMessages.allowedFiles);
+                hasInvalidFiles = true;
+                return;
+            }
+
+            if (!isAllowedSize(file)) {
+                setFieldError(field, rrhhMessages.maxSize);
+                hasInvalidFiles = true;
+            }
+        });
+
+        if (hasInvalidFiles) {
+            event.preventDefault();
+            showToast(rrhhMessages.toast);
+
+            const firstInvalidField = fileFields.find((field) => field.label.classList.contains('is-invalid'));
+            if (firstInvalidField) {
+                firstInvalidField.label.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+            }
+        }
+    });
+}
 </script>
 
 @endsection

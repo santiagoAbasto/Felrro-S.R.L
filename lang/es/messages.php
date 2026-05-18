@@ -174,8 +174,14 @@ return [
     'select_sector'       => 'Sector',
     'upload_cv'           => 'Curriculum Vitae',
     'upload_cover_letter' => 'Carta de presentación',
+    'upload_cv_required'  => 'Subí tu Curriculum Vitae.',
+    'upload_cover_letter_required' => 'Subí tu carta de presentación.',
+    'upload_allowed_files' => 'Solo se aceptan archivos PDF o Word (.doc, .docx).',
+    'upload_max_size'     => 'El archivo no puede superar los 10 MB.',
+    'upload_file_hint'    => 'Formato permitido: PDF o Word. Peso máximo: 10 MB.',
     'select_file'         => 'Seleccionar archivo',
     'apply_now'           => 'Enviar postulación',
+    'rrhh_file_validation_toast' => 'Revisá los archivos adjuntos para continuar.',
     'application_sent_successfully' => 'Tu postulación fue enviada correctamente. Nos pondremos en contacto contigo pronto.',
 
     /*

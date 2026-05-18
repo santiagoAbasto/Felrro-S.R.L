@@ -2,12 +2,14 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import SectorForm from "./SectorForm";
 
-export default function Create() {
+export default function Create({ products }) {
 
     const { data, setData, post, processing, errors } = useForm({
         name: { es: "", en: "" },
         description: { es: "", en: "" },
+        order: "",
         image: null,
+        related_product_ids: [],
         is_active: true
     });
 
@@ -55,6 +57,7 @@ export default function Create() {
                         submit={submit}
                         processing={processing}
                         errors={errors}
+                        products={products}
                         buttonText="Crear Sector"
                     />
 

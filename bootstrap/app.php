@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'newsletter/unsubscribe/*',
+        ]);
 
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class,

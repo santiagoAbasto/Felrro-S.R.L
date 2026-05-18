@@ -124,26 +124,49 @@ export default function Index({ subscribers, filters, activeCount }) {
                                         <td className="px-4 py-3 text-slate-500">{sub.id}</td>
                                         <td className="px-4 py-3 font-medium text-slate-700">{sub.email}</td>
                                         <td className="px-4 py-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => toggle(sub.id)}
-                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                    sub.is_active
-                                                        ? "bg-emerald-100 text-emerald-700"
-                                                        : "bg-slate-200 text-slate-500"
-                                                }`}
+                                            {(() => {
+                                                const statusLabel = sub.is_active
+                                                    ? "Activo"
+                                                    : sub.unsubscribed_at
+                                                        ? "Inactivo - desuscrito"
+                                                        : "Inactivo";
+
+                                                const statusClassName = sub.is_active
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : sub.unsubscribed_at
+                                                        ? "bg-amber-100 text-amber-700"
+                                                        : "bg-slate-200 text-slate-500";
+
+                                                return (
+                                            <span
+                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClassName}`}
                                             >
-                                                {sub.is_active ? "Activo" : "Pausado"}
-                                            </button>
+                                                {statusLabel}
+                                            </span>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => destroy(sub.id)}
-                                                className="text-sm font-semibold text-red-500 transition hover:text-red-600"
-                                            >
-                                                Eliminar
-                                            </button>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggle(sub.id)}
+                                                    className={`text-sm font-semibold transition ${
+                                                        sub.is_active
+                                                            ? "text-amber-600 hover:text-amber-700"
+                                                            : "text-emerald-600 hover:text-emerald-700"
+                                                    }`}
+                                                >
+                                                    {sub.is_active ? "Inactivar" : "Reactivar"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => destroy(sub.id)}
+                                                    className="text-sm font-semibold text-red-500 transition hover:text-red-600"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

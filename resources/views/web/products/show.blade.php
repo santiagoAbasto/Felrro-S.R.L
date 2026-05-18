@@ -47,6 +47,20 @@
 
         return trim($title);
     };
+
+    $quoteableSectionIds = [];
+    $passedElectricalSection = false;
+
+    foreach ($technicalSections as $technicalSection) {
+        if ($technicalSection->type === 'electrical') {
+            $passedElectricalSection = true;
+            continue;
+        }
+
+        if ($passedElectricalSection && $technicalSection->rows->isNotEmpty()) {
+            $quoteableSectionIds[] = (int) $technicalSection->id;
+        }
+    }
 @endphp
 
 <section class="product-page">
@@ -124,13 +138,6 @@
                         {{ __('messages.technical_sheet') }}
                     </a>
                     @endif
-
-                    <form action="{{ route('cotizacion.add', $product->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn-product">
-                            {{ __('messages.quote') }}
-                        </button>
-                    </form>
                 </div>
 
             </div>
@@ -208,10 +215,18 @@
                             <span class="technical-public__eyebrow">Datos técnicos</span>
                             <h3>Tablas técnicas del producto</h3>
                             <p>Información dimensional y eléctrica importada desde la ficha técnica, presentada para consulta rápida en la web.</p>
+                            @if($errors->has('technical_rows'))
+                                <div class="technical-public__error">
+                                    {{ $errors->first('technical_rows') }}
+                                </div>
+                            @endif
                         </div>
 
                         <div class="technical-public__list">
                             @foreach($technicalSections as $section)
+                                @php
+                                    $isQuoteSection = in_array((int) $section->id, $quoteableSectionIds, true);
+                                @endphp
                                 <article class="technical-public__card">
                                     <div class="technical-public__title">
                                         {{ $formatTechnicalTitle($section->getTitle()) }}
@@ -219,64 +234,158 @@
 
                                     <div class="technical-public__table-wrap">
                                         @if($section->type === 'electrical')
+                                            @php
+                                                $firstRow = $section->rows->first();
+                                                $descriptorHeaders = collect($firstRow->values['descriptor_headers'] ?? [])
+                                                    ->filter(fn ($header) => trim((string) $header) !== '')
+                                                    ->values();
+                                                $valueHeaders = collect($firstRow->values['headers'] ?? [])
+                                                    ->filter(fn ($header) => trim((string) $header) !== '')
+                                                    ->values();
+                                                $hasGenericElectricalSchema = $descriptorHeaders->isNotEmpty() && $valueHeaders->isNotEmpty();
+                                            @endphp
                                             <table class="technical-public__table technical-public__table--electrical">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Sección nominal <span>mm²</span></th>
-                                                        <th>Res. 20°C C.C.</th>
-                                                        <th>Res. 70°C C.A.</th>
-                                                        <th>React. c1</th>
-                                                        <th>React. c2</th>
-                                                        <th>Aire bipolar</th>
-                                                        <th>Aire multipolar</th>
-                                                        <th>Tierra bipolar</th>
-                                                        <th>Tierra multipolar</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($section->rows as $row)
+                                                @if($hasGenericElectricalSchema)
+                                                    <thead>
                                                         <tr>
-                                                            <td>{{ $row->nominal_section }}</td>
-                                                            @foreach(['resistencia_20_cc','resistencia_70_ca','reactancia_c1','reactancia_c2','aire_bipolar','aire_multipolar','tierra_bipolar','tierra_multipolar'] as $key)
-                                                                <td>{{ $formatTechnicalCell($row->values[$key]['value'] ?? '--') }}</td>
+                                                            @foreach($descriptorHeaders as $header)
+                                                                <th>{{ $header }}</th>
+                                                            @endforeach
+                                                            @foreach($valueHeaders as $header)
+                                                                <th>{{ $header }}</th>
                                                             @endforeach
                                                         </tr>
-                                                    @endforeach
-                                                </tbody>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($section->rows as $row)
+                                                            @php
+                                                                $descriptorValues = collect($row->values['descriptor_values'] ?? [])
+                                                                    ->take($descriptorHeaders->count())
+                                                                    ->pad($descriptorHeaders->count(), '')
+                                                                    ->values();
+                                                                $rawValues = collect($row->values['raw'] ?? [])
+                                                                    ->take($valueHeaders->count())
+                                                                    ->pad($valueHeaders->count(), '')
+                                                                    ->values();
+                                                            @endphp
+                                                            <tr>
+                                                                @foreach($descriptorValues as $value)
+                                                                    <td>{{ $formatTechnicalCell($value) }}</td>
+                                                                @endforeach
+                                                                @foreach($rawValues as $value)
+                                                                    <td>{{ $formatTechnicalCell($value) }}</td>
+                                                                @endforeach
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                @else
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Sección nominal <span>mm²</span></th>
+                                                            <th>Res. 20°C C.C.</th>
+                                                            <th>Res. 70°C C.A.</th>
+                                                            <th>React. c1</th>
+                                                            <th>React. c2</th>
+                                                            <th>Aire bipolar</th>
+                                                            <th>Aire multipolar</th>
+                                                            <th>Tierra bipolar</th>
+                                                            <th>Tierra multipolar</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($section->rows as $row)
+                                                            <tr>
+                                                                <td>{{ $row->nominal_section }}</td>
+                                                                @foreach(['resistencia_20_cc','resistencia_70_ca','reactancia_c1','reactancia_c2','aire_bipolar','aire_multipolar','tierra_bipolar','tierra_multipolar'] as $key)
+                                                                    <td>{{ $formatTechnicalCell($row->values[$key]['value'] ?? '--') }}</td>
+                                                                @endforeach
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                @endif
                                             </table>
                                         @else
                                             @php
                                                 $firstRow = $section->rows->first();
+                                                $leadHeader = trim((string) ($firstRow->values['lead_header'] ?? 'Formación'));
                                                 $headers = collect($firstRow->values['headers'] ?? [])
                                                     ->filter(fn ($header) => trim((string) $header) !== '')
                                                     ->values();
                                             @endphp
-                                            <table class="technical-public__table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Formación</th>
-                                                        @foreach($headers as $header)
-                                                            <th>{{ $header }}</th>
-                                                        @endforeach
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($section->rows as $row)
-                                                        @php
-                                                            $rawValues = collect($row->values['raw'] ?? [])
-                                                                ->take($headers->count())
-                                                                ->pad($headers->count(), '')
-                                                                ->values();
-                                                        @endphp
+                                            <div class="technical-public__table-main">
+                                                @if($isQuoteSection)
+                                                    <form
+                                                        action="{{ route('cotizacion.add', $product->id) }}"
+                                                        method="POST"
+                                                        class="technical-public__quote-form"
+                                                        data-technical-quote-form>
+                                                        @csrf
+                                                        <input type="hidden" name="requires_technical_selection" value="1">
+                                                @endif
+                                                <table class="technical-public__table">
+                                                    <thead>
                                                         <tr>
-                                                            <td>{{ $row->formation }}</td>
-                                                            @foreach($rawValues as $value)
-                                                                <td>{{ $formatTechnicalCell($value) }}</td>
+                                                            <th>{{ $leadHeader !== '' ? $leadHeader : 'Formación' }}</th>
+                                                            @foreach($headers as $header)
+                                                                <th>{{ $header }}</th>
                                                             @endforeach
+                                                            @if($isQuoteSection)
+                                                                <th class="technical-public__table-action-head">Seleccionar</th>
+                                                            @endif
                                                         </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($section->rows as $row)
+                                                            @php
+                                                                $rawValues = collect($row->values['raw'] ?? [])
+                                                                    ->take($headers->count())
+                                                                    ->pad($headers->count(), '')
+                                                                    ->values();
+                                                            @endphp
+                                                            <tr data-technical-quote-row>
+                                                                <td>{{ $row->formation }}</td>
+                                                                @foreach($rawValues as $value)
+                                                                    <td>{{ $formatTechnicalCell($value) }}</td>
+                                                                @endforeach
+                                                                @if($isQuoteSection)
+                                                                    <td class="technical-public__table-action-cell" data-technical-action-cell>
+                                                                        <div class="technical-public__table-action-layout">
+                                                                            <label class="technical-public__row-check">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    name="technical_row_ids[]"
+                                                                                    value="{{ $row->id }}"
+                                                                                    class="technical-public__row-check-input"
+                                                                                    data-technical-row-checkbox>
+                                                                                <span class="technical-public__row-check-box" aria-hidden="true"></span>
+                                                                                <span class="technical-public__row-check-text">Seleccionar</span>
+                                                                            </label>
+                                                                            <button
+                                                                                type="submit"
+                                                                                class="btn-product technical-public__row-quote-button"
+                                                                                data-technical-row-submit
+                                                                                hidden>
+                                                                                {{ __('messages.quote') }}
+                                                                            </button>
+                                                                        </div>
+                                                                    </td>
+                                                                @endif
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                                @if($isQuoteSection)
+                                                    <div class="technical-public__quote-overlay" data-technical-quote-overlay hidden>
+                                                        <button
+                                                            type="submit"
+                                                            class="btn-product technical-public__quote-overlay-button"
+                                                            data-technical-overlay-submit>
+                                                            {{ __('messages.quote') }}
+                                                        </button>
+                                                    </div>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         @endif
                                     </div>
                                 </article>
@@ -346,6 +455,96 @@
         document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
         element.classList.add('active');
     }
+
+    document.querySelectorAll('[data-technical-quote-form]').forEach(form => {
+        const checkboxes = Array.from(form.querySelectorAll('[data-technical-row-checkbox]'));
+        const rowButtons = Array.from(form.querySelectorAll('[data-technical-row-submit]'));
+        const overlay = form.querySelector('[data-technical-quote-overlay]');
+        const overlayButton = form.querySelector('[data-technical-overlay-submit]');
+
+        if (!checkboxes.length || !overlay || !overlayButton) {
+            return;
+        }
+
+        const updateQuoteState = () => {
+            const selectedRows = checkboxes
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => {
+                    const row = checkbox.closest('[data-technical-quote-row]');
+
+                    return {
+                        checkbox,
+                        row,
+                        actionCell: row ? row.querySelector('[data-technical-action-cell]') : null,
+                    };
+                })
+                .filter(item => item.row && item.actionCell);
+
+            const selectedCount = selectedRows.length;
+
+            checkboxes.forEach((checkbox, index) => {
+                const row = checkbox.closest('[data-technical-quote-row]');
+                const rowButton = rowButtons[index];
+                if (row) {
+                    row.classList.toggle('technical-public__row--selected', checkbox.checked);
+                }
+
+                if (rowButton) {
+                    rowButton.hidden = !(selectedCount === 1 && checkbox.checked);
+                }
+            });
+
+            if (selectedCount === 0) {
+                overlay.hidden = true;
+                overlay.style.removeProperty('top');
+                overlay.style.removeProperty('height');
+                overlay.style.removeProperty('left');
+                overlayButton.textContent = '{{ __('messages.quote') }}';
+                return;
+            }
+
+            if (selectedCount === 1) {
+                overlay.hidden = true;
+                overlay.style.removeProperty('top');
+                overlay.style.removeProperty('height');
+                overlay.style.removeProperty('left');
+                overlayButton.textContent = '{{ __('messages.quote') }}';
+                return;
+            }
+
+            const firstCellRect = selectedRows[0].actionCell.getBoundingClientRect();
+            const lastCellRect = selectedRows[selectedRows.length - 1].actionCell.getBoundingClientRect();
+            const formRect = form.getBoundingClientRect();
+            const overlayWidth = 124;
+            const overlayGap = 32;
+            const selectorWidth = 144;
+            const top = firstCellRect.top - formRect.top;
+            const height = lastCellRect.bottom - firstCellRect.top;
+            const left = firstCellRect.left - formRect.left + selectorWidth + overlayGap;
+
+            overlay.hidden = false;
+            overlay.style.top = top + 'px';
+            overlay.style.height = height + 'px';
+            overlay.style.left = left + 'px';
+            overlayButton.textContent = '{{ __('messages.quote') }}';
+        };
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateQuoteState);
+        });
+
+        window.addEventListener('resize', updateQuoteState);
+
+        form.addEventListener('submit', event => {
+            const selectedCount = checkboxes.filter(checkbox => checkbox.checked).length;
+
+            if (selectedCount === 0) {
+                event.preventDefault();
+            }
+        });
+
+        updateQuoteState();
+    });
 
     document.querySelectorAll('.tab').forEach(tab => {
 

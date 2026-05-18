@@ -1,5 +1,5 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import {
     AdminFileField,
@@ -10,19 +10,24 @@ import {
     AdminToggle,
 } from "@/Components/Admin/FormElements";
 
+const normalizeLang = (field) => ({
+    es: field?.es ?? "",
+    en: field?.en ?? "",
+});
+
 export default function Edit({ section }) {
-    const { data, setData, post, processing, errors } = useForm({
-        _method: "put",
-        title: section?.title ?? { es: "", en: "" },
-        subtitle: section?.subtitle ?? { es: "", en: "" },
-        content: section?.content ?? { es: "", en: "" },
+    const { data, setData, put, processing, errors } = useForm({
+        title: normalizeLang(section?.title),
+        subtitle: normalizeLang(section?.subtitle),
+        content: normalizeLang(section?.content),
         image: null,
-        is_active: section?.is_active ?? true,
+        is_active: Boolean(section?.is_active),
     });
 
     const submit = (event) => {
         event.preventDefault();
-        post(route("admin.cms.calidad.update"), {
+
+        put(route("admin.cms.calidad.update"), {
             forceFormData: true,
         });
     };
@@ -34,37 +39,21 @@ export default function Edit({ section }) {
             <div className="space-y-8">
                 <AdminPageHeader
                     eyebrow="Calidad"
-                    title="Contenido principal de Calidad"
-                    description="Acá editás el bloque superior de la página Calidad. Los certificados y sus archivos se gestionan por separado."
-                    actions={[
-                        <Link
-                            key="list"
-                            href={route("admin.certificates.index")}
-                            className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-                        >
-                            Ver certificados
-                        </Link>,
-                        <Link
-                            key="create"
-                            href={route("admin.certificates.create")}
-                            className="rounded-2xl bg-[#25A7CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d96b8]"
-                        >
-                            Nuevo certificado
-                        </Link>,
-                    ]}
+                    title="Página de calidad"
+                    description="Editá el bloque principal de la página Calidad con textos claros, imagen institucional y estado de publicación."
                 />
 
                 <form onSubmit={submit} className="space-y-8">
                     <AdminSectionCard
-                        title="Texto del encabezado"
-                        description="Usá un mensaje breve y claro para presentar la política de calidad."
+                        title="Contenido principal"
+                        description="Completá el título, subtítulo y desarrollo del bloque principal en español e inglés."
                     >
                         <div className="grid gap-6 lg:grid-cols-2">
                             <AdminTextInput
                                 label="Título"
                                 value={data.title.es}
                                 onChange={(value) => setData("title", { ...data.title, es: value })}
-                                placeholder="Ej: Calidad certificada"
+                                placeholder="Ej: Calidad certificada en cada proceso"
                                 error={errors["title.es"]}
                             />
                             <AdminTextInput
@@ -78,15 +67,15 @@ export default function Edit({ section }) {
                         </div>
 
                         <div className="grid gap-6 lg:grid-cols-2">
-                            <AdminRichTextarea
-                                label="Introducción"
+                            <AdminTextInput
+                                label="Subtítulo"
                                 value={data.subtitle.es}
                                 onChange={(value) => setData("subtitle", { ...data.subtitle, es: value })}
-                                placeholder="Explicá en pocas líneas el enfoque de calidad."
+                                placeholder="Una bajada breve para acompañar el título"
                                 error={errors["subtitle.es"]}
                             />
-                            <AdminRichTextarea
-                                label="Introducción en inglés"
+                            <AdminTextInput
+                                label="Subtítulo en inglés"
                                 value={data.subtitle.en}
                                 onChange={(value) => setData("subtitle", { ...data.subtitle, en: value })}
                                 placeholder="Versión en inglés"
@@ -94,19 +83,13 @@ export default function Edit({ section }) {
                                 optional
                             />
                         </div>
-                    </AdminSectionCard>
 
-                    <AdminSectionCard
-                        title="Puntos o políticas"
-                        description="Podés escribir un párrafo o usar una lista con un punto por línea."
-                        tone="accent"
-                    >
                         <div className="grid gap-6 lg:grid-cols-2">
                             <AdminRichTextarea
                                 label="Contenido"
                                 value={data.content.es}
                                 onChange={(value) => setData("content", { ...data.content, es: value })}
-                                placeholder="Describí compromisos, procesos o políticas de calidad."
+                                placeholder="Describí las políticas, certificaciones o compromisos de calidad."
                                 error={errors["content.es"]}
                             />
                             <AdminRichTextarea
@@ -121,27 +104,30 @@ export default function Edit({ section }) {
                     </AdminSectionCard>
 
                     <AdminSectionCard
-                        title="Imagen lateral"
-                        description="La imagen acompaña el texto en la parte pública, por eso conviene revisar la vista previa antes de guardar."
+                        title="Imagen y publicación"
+                        description="Podés actualizar la imagen principal y decidir si este bloque queda activo en la vista pública."
+                        tone="accent"
                     >
-                        <AdminFileField
-                            label="Imagen"
-                            value={data.image}
-                            onChange={(file) => setData("image", file)}
-                            accept="image/png,image/jpeg,image/webp"
-                            maxSizeMB={5}
-                            currentUrl={section?.image ? `/storage/${section.image}` : null}
-                            currentLabel="Imagen actual de la sección"
-                            hint="Formatos admitidos: JPG, PNG o WEBP."
-                            error={errors.image}
-                        />
+                        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+                            <AdminFileField
+                                label="Imagen principal"
+                                value={data.image}
+                                onChange={(file) => setData("image", file)}
+                                accept="image/png,image/jpeg,image/webp"
+                                maxSizeMB={5}
+                                currentUrl={section?.image ? `/storage/${section.image}` : null}
+                                currentLabel="Imagen actual de la sección"
+                                hint="Usá una imagen limpia y representativa del proceso o certificación."
+                                error={errors.image}
+                            />
 
-                        <AdminToggle
-                            label="Mostrar esta sección en la web"
-                            hint="Si la dejás oculta, no se verá en la página pública."
-                            checked={data.is_active}
-                            onChange={(value) => setData("is_active", value)}
-                        />
+                            <AdminToggle
+                                label="Mostrar sección en la web"
+                                hint="Si lo desactivás, el contenido sigue guardado pero deja de verse públicamente."
+                                checked={data.is_active}
+                                onChange={(value) => setData("is_active", value)}
+                            />
+                        </div>
                     </AdminSectionCard>
 
                     <div className="flex justify-end">

@@ -23,6 +23,7 @@
         "@iconify/react": "^6.0.2",
         "@tailwindcss/postcss": "^4.2.1",
         "lucide-react": "^0.575.0",
+        "postcss": "^8.5.14",
         "simplebar-react": "^3.3.2",
         "tailwindcss-animate": "^1.0.7",
         "ziggy-js": "^2.6.1"

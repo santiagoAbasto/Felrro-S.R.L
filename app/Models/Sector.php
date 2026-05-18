@@ -68,6 +68,12 @@ class Sector extends Model
         }
     }
 
+    public function relatedProducts()
+    {
+        return $this->belongsToMany(Product::class, 'product_sector')
+            ->withTimestamps();
+    }
+
     /*
     |--------------------------------------------------------------------------
     | 🔥 ORDEN EMPRESARIAL A, AA, AB...

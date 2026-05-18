@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Sector;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\Sector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,13 +16,17 @@ class SectorController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Sector/Index', [
-            'sectors' => Sector::orderBy('order')->get()
+            'sectors' => Sector::withCount('relatedProducts')
+                ->orderBy('order')
+                ->get()
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('Admin/Sector/Create');
+        return Inertia::render('Admin/Sector/Create', [
+            'products' => $this->productOptions(),
+        ]);
     }
 
     public function store(Request $request)
@@ -34,6 +39,8 @@ class SectorController extends Controller
             'description.en' => 'nullable|string',
 
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'related_product_ids' => 'nullable|array',
+            'related_product_ids.*' => 'integer|exists:products,id',
 
             'is_active' => 'boolean',
         ]);
@@ -58,6 +65,7 @@ class SectorController extends Controller
             }
 
             $sector->save();
+            $sector->relatedProducts()->sync($validated['related_product_ids'] ?? []);
         });
 
         return redirect()
@@ -68,7 +76,8 @@ class SectorController extends Controller
     public function edit(Sector $sector)
     {
         return Inertia::render('Admin/Sector/Edit', [
-            'sector' => $sector
+            'sector' => $sector->load('relatedProducts:id'),
+            'products' => $this->productOptions(),
         ]);
     }
 
@@ -81,6 +90,8 @@ class SectorController extends Controller
             'description.en' => 'nullable|string',
             'order' => 'required|string|max:10',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'related_product_ids' => 'nullable|array',
+            'related_product_ids.*' => 'integer|exists:products,id',
             'is_active' => 'boolean',
         ]);
 
@@ -111,6 +122,8 @@ class SectorController extends Controller
                 'image' => $validated['image'] ?? $sector->image,
                 'is_active' => $request->boolean('is_active'),
             ]);
+
+            $sector->relatedProducts()->sync($validated['related_product_ids'] ?? []);
         });
 
         return redirect()
@@ -143,5 +156,24 @@ class SectorController extends Controller
         }
 
         return $slug;
+    }
+
+    private function productOptions()
+    {
+        return Product::query()
+            ->with('category:id,name')
+            ->where('is_active', true)
+            ->orderBy('featured_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
+                'name' => $product->getName(),
+                'slug' => $product->slug,
+                'short_description' => $product->getShortDescription(),
+                'image_url' => $product->image_url,
+                'category_name' => $product->category?->getName(),
+            ])
+            ->values();
     }
 }

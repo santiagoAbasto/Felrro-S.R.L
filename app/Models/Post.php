@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Support\MediaPath;
 
 class Post extends Model
 {
@@ -140,16 +141,6 @@ class Post extends Model
 
     public function getImageUrlAttribute(): string
     {
-        if (!$this->image) {
-            return asset('images/placeholder.png');
-        }
-
-        //  Caso antiguo (public/images/...)
-        if (str_starts_with($this->image, 'images/')) {
-            return asset($this->image);
-        }
-
-        //  Caso nuevo (storage/posts/...)
-        return asset('storage/' . $this->image);
+        return MediaPath::imageAsset($this->image, asset('images/logo.png'));
     }
 }

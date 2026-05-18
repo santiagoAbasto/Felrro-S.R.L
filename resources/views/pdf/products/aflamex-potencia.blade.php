@@ -49,7 +49,50 @@
 
         return str_replace('≥', '&#8805;', e(trim($title)));
     };
+    $resolveLocalizedTitle = function ($value) {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            $locale = app()->getLocale();
+
+            return (string) ($value[$locale] ?? $value['es'] ?? collect($value)->filter()->first() ?? '');
+        }
+
+        return '';
+    };
+    $resolveSectionTitle = function ($section) use ($resolveLocalizedTitle) {
+        if (is_object($section) && isset($section->title)) {
+            return $resolveLocalizedTitle($section->title);
+        }
+
+        if (is_object($section) && method_exists($section, 'getTitle')) {
+            return $resolveLocalizedTitle($section->getTitle());
+        }
+
+        return '';
+    };
     $sectionRowCount = fn ($section) => $section->rows?->count() ?? 0;
+    $makeSectionFragment = function ($section, $rows) use ($resolveSectionTitle) {
+        return (object) [
+            'type' => $section->type,
+            'title' => $resolveSectionTitle($section),
+            'rows' => $rows->values(),
+        ];
+    };
+    $splitSectionFragments = function ($section) use ($makeSectionFragment) {
+        $rows = $section->rows->values();
+        $chunkSize = $section->type === 'electrical' ? 16 : 22;
+
+        if ($rows->count() <= $chunkSize) {
+            return collect([$makeSectionFragment($section, $rows)]);
+        }
+
+        return $rows
+            ->chunk($chunkSize)
+            ->map(fn ($chunk) => $makeSectionFragment($section, $chunk));
+    };
     $isSmallTechnicalSection = fn ($section) => $section->type !== 'electrical' && $sectionRowCount($section) <= 10;
     $technicalPageRows = fn (array $pageSections) => collect($pageSections)->sum(fn ($section) => $sectionRowCount($section));
     $technicalPageAllowsNotes = fn (array $pageSections) => $technicalPageRows($pageSections) <= 18;
@@ -57,23 +100,28 @@
     $pendingSmallSection = null;
 
     foreach ($sections as $section) {
-        if ($isSmallTechnicalSection($section)) {
-            if ($pendingSmallSection) {
-                $technicalPages[] = [$pendingSmallSection, $section];
-                $pendingSmallSection = null;
-            } else {
-                $pendingSmallSection = $section;
+        foreach ($splitSectionFragments($section) as $fragment) {
+            if ($isSmallTechnicalSection($fragment)) {
+                if ($pendingSmallSection && $technicalPageRows([$pendingSmallSection, $fragment]) <= 18) {
+                    $technicalPages[] = [$pendingSmallSection, $fragment];
+                    $pendingSmallSection = null;
+                } else {
+                    if ($pendingSmallSection) {
+                        $technicalPages[] = [$pendingSmallSection];
+                    }
+                    $pendingSmallSection = $fragment;
+                }
+
+                continue;
             }
 
-            continue;
-        }
+            if ($pendingSmallSection) {
+                $technicalPages[] = [$pendingSmallSection];
+                $pendingSmallSection = null;
+            }
 
-        if ($pendingSmallSection) {
-            $technicalPages[] = [$pendingSmallSection];
-            $pendingSmallSection = null;
+            $technicalPages[] = [$fragment];
         }
-
-        $technicalPages[] = [$section];
     }
 
     if ($pendingSmallSection) {
@@ -106,6 +154,7 @@
     $mainIcons = $icons
         ->reject(fn ($icon) => $optionalIcons->contains('id', $icon->id) || $footerIcons->contains('id', $icon->id))
         ->values();
+    $coverIsDense = $construction->count() >= 10 || $mainIcons->count() >= 7 || $optionalIcons->count() > 0;
 @endphp
 <!doctype html>
 <html lang="es">
@@ -193,6 +242,14 @@
             width: auto;
             height: auto;
         }
+        .hero-card--compact {
+            height: 138px;
+            margin-bottom: 10px;
+            padding: 8px 14px;
+        }
+        .hero-card--compact img {
+            max-height: 108px;
+        }
         .section-heading {
             width: 100%;
             border-collapse: collapse;
@@ -258,6 +315,9 @@
             width: 100%;
             border-collapse: collapse;
         }
+        .icons--compact {
+            margin-top: 8px;
+        }
         .icons td {
             width: 12.5%;
             text-align: center;
@@ -265,6 +325,10 @@
             padding: 0 4px 5px;
             font-size: 6.5px;
             line-height: 1.15;
+        }
+        .icons--compact td {
+            padding: 0 3px 3px;
+            font-size: 6px;
         }
         .icon-image-frame {
             width: 52px;
@@ -274,12 +338,22 @@
             line-height: 52px;
             overflow: hidden;
         }
+        .icons--compact .icon-image-frame {
+            width: 44px;
+            height: 44px;
+            line-height: 44px;
+            margin-bottom: 2px;
+        }
         .icons img {
             display: inline-block;
             width: 46px;
             height: 46px;
             object-fit: contain;
             vertical-align: middle;
+        }
+        .icons--compact img {
+            width: 38px;
+            height: 38px;
         }
         .icon-title {
             display: block;
@@ -294,6 +368,9 @@
             padding: 7px 9px;
             background: #fbfdfe;
             border-left: 2px solid #7f8790;
+        }
+        .options-card--compact {
+            padding: 6px 8px;
         }
         .options {
             margin-top: 0;
@@ -520,7 +597,7 @@
             <tr>
                 <td>
                     <div class="document-label">Ficha técnica corporativa</div>
-                    <div class="document-sub">Potencia · Cables especiales</div>
+                    <div class="document-sub">{{ $product->category?->getName() ?? 'Producto' }} · Cables especiales</div>
                 </td>
                 <td class="header-logo">
                     @if($logoDataUri)
@@ -531,12 +608,12 @@
         </table>
 
         <div class="title-block">
-            <div class="title-kicker">Familia técnica</div>
+            <div class="title-kicker">Ficha técnica</div>
             <div class="title">{{ $product->getName() }}</div>
         </div>
 
         @if($productImageDataUri)
-            <div class="hero-card">
+            <div class="hero-card {{ $coverIsDense ? 'hero-card--compact' : '' }}">
                 <img src="{{ $productImageDataUri }}" alt="{{ $product->getName() }}">
             </div>
         @endif
@@ -569,7 +646,7 @@
         </table>
 
         @if($mainIcons->count())
-            <table class="icons">
+            <table class="icons {{ $coverIsDense ? 'icons--compact' : '' }}">
                 <tr>
                     @foreach($mainIcons->take(8) as $index => $icon)
                         @if($mainIcons->count() === 7 && $index === 5)
@@ -598,7 +675,7 @@
                     <td class="section-heading-rule"></td>
                 </tr>
             </table>
-            <div class="options-card">
+            <div class="options-card {{ $coverIsDense ? 'options-card--compact' : '' }}">
                 <div class="copy options">
                     @foreach($extras as $item)
                         <p><strong>{{ $item->getTitle() }}:</strong> {{ $item->getContent() }}</p>
@@ -608,7 +685,7 @@
         @endif
 
         @if($optionalIcons->count())
-            <table class="icons" style="width: 38%; margin-top: 18px;">
+            <table class="icons {{ $coverIsDense ? 'icons--compact' : '' }}" style="width: 38%; margin-top: {{ $coverIsDense ? '12px' : '18px' }};">
                 <tr>
                     @foreach($optionalIcons->take(3) as $icon)
                         <td style="width: 33.33%;">
@@ -658,7 +735,7 @@
                     <tr>
                         <td>
                             <div class="document-label">Ficha técnica corporativa</div>
-                            <div class="document-sub">Potencia · Datos técnicos</div>
+                            <div class="document-sub">{{ $product->category?->getName() ?? 'Producto' }} · Datos técnicos</div>
                         </td>
                         <td class="header-logo">
                             @if($logoDataUri)
@@ -669,49 +746,100 @@
                 </table>
 
                 <div class="title-block">
-                    <div class="title-kicker">Familia técnica</div>
+                    <div class="title-kicker">Ficha técnica</div>
                     <div class="title">{{ $product->getName() }}</div>
                 </div>
 
                 @foreach($sectionsOnPage as $section)
                     <div class="tech-section">
                     @if($section->type === 'electrical')
+                        @php
+                            $firstRow = $section->rows->first();
+                            $descriptorHeaders = collect($firstRow->values['descriptor_headers'] ?? [])
+                                ->filter(fn ($header) => trim((string) $header) !== '')
+                                ->values();
+                            $valueHeaders = collect($firstRow->values['headers'] ?? [])
+                                ->filter(fn ($header) => trim((string) $header) !== '')
+                                ->values();
+                            $hasGenericElectricalSchema = $descriptorHeaders->isNotEmpty() && $valueHeaders->isNotEmpty();
+                            $electricalColumnCount = $hasGenericElectricalSchema ? $descriptorHeaders->count() + $valueHeaders->count() : 9;
+                            $electricalColumnWidth = $electricalColumnCount > 0 ? (100 / $electricalColumnCount) : 100;
+                        @endphp
                         <table class="tech">
                             <colgroup>
-                                @foreach(range(1, 9) as $column)
-                                    <col style="width: 11.111%;">
+                                @foreach(range(1, $electricalColumnCount) as $column)
+                            <col style="width: {{ number_format($electricalColumnWidth, 4, '.', '') }}%;">
                                 @endforeach
                             </colgroup>
-                            <thead>
-                                <tr>
-                                    <th class="tech-section-name" colspan="9">{!! $formatTechnicalTitle($section->getTitle()) !!}</th>
-                                </tr>
-                                <tr>
-                                    <th>Sección nominal (mm²)</th>
-                                    <th>Res. 20°C C.C.</th>
-                                    <th>Res. 70°C C.A.</th>
-                                    <th>React. c1</th>
-                                    <th>React. c2</th>
-                                    <th>Aire bipolar</th>
-                                    <th>Aire multipolar</th>
-                                    <th>Tierra bipolar</th>
-                                    <th>Tierra multipolar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($section->rows as $row)
+                            @if($hasGenericElectricalSchema)
+                                <thead>
                                     <tr>
-                                        <td>{{ $row->nominal_section }}</td>
-                                        @foreach(['resistencia_20_cc','resistencia_70_ca','reactancia_c1','reactancia_c2','aire_bipolar','aire_multipolar','tierra_bipolar','tierra_multipolar'] as $key)
-                                            <td>{{ $row->values[$key]['value'] ?? '--' }}</td>
+                                        <th class="tech-section-name" colspan="{{ $electricalColumnCount }}">{!! $formatTechnicalTitle($resolveSectionTitle($section)) !!}</th>
+                                    </tr>
+                                    <tr>
+                                        @foreach($descriptorHeaders as $header)
+                                            <th>{{ $header }}</th>
+                                        @endforeach
+                                        @foreach($valueHeaders as $header)
+                                            <th>{{ $header }}</th>
                                         @endforeach
                                     </tr>
-                                @endforeach
-                            </tbody>
+                                </thead>
+                                <tbody>
+                                    @foreach($section->rows as $row)
+                                        @php
+                                            $descriptorValues = collect($row->values['descriptor_values'] ?? [])
+                                                ->take($descriptorHeaders->count())
+                                                ->pad($descriptorHeaders->count(), '')
+                                                ->values();
+                                            $rawValues = collect($row->values['raw'] ?? [])
+                                                ->take($valueHeaders->count())
+                                                ->pad($valueHeaders->count(), '')
+                                                ->values();
+                                        @endphp
+                                        <tr>
+                                            @foreach($descriptorValues as $value)
+                                                <td>{{ $formatCell($value) }}</td>
+                                            @endforeach
+                                            @foreach($rawValues as $value)
+                                                <td>{{ $formatCell($value) }}</td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            @else
+                                <thead>
+                                    <tr>
+                                        <th class="tech-section-name" colspan="9">{!! $formatTechnicalTitle($resolveSectionTitle($section)) !!}</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Sección nominal (mm²)</th>
+                                        <th>Res. 20°C C.C.</th>
+                                        <th>Res. 70°C C.A.</th>
+                                        <th>React. c1</th>
+                                        <th>React. c2</th>
+                                        <th>Aire bipolar</th>
+                                        <th>Aire multipolar</th>
+                                        <th>Tierra bipolar</th>
+                                        <th>Tierra multipolar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($section->rows as $row)
+                                        <tr>
+                                            <td>{{ $row->nominal_section }}</td>
+                                            @foreach(['resistencia_20_cc','resistencia_70_ca','reactancia_c1','reactancia_c2','aire_bipolar','aire_multipolar','tierra_bipolar','tierra_multipolar'] as $key)
+                                                <td>{{ $row->values[$key]['value'] ?? '--' }}</td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            @endif
                         </table>
                     @else
                         @php
                             $firstRow = $section->rows->first();
+                            $leadHeader = trim((string) ($firstRow->values['lead_header'] ?? 'Formación'));
                             $headers = collect($firstRow->values['headers'] ?? [])
                                 ->filter(fn ($header) => trim((string) $header) !== '')
                                 ->values();
@@ -726,10 +854,10 @@
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th class="tech-section-name" colspan="{{ $headers->count() + 1 }}">{!! $formatTechnicalTitle($section->getTitle()) !!}</th>
+                                    <th class="tech-section-name" colspan="{{ $headers->count() + 1 }}">{!! $formatTechnicalTitle($resolveSectionTitle($section)) !!}</th>
                                 </tr>
                                 <tr>
-                                    <th>Formación</th>
+                                    <th>{{ $leadHeader !== '' ? $leadHeader : 'Formación' }}</th>
                                     @foreach($headers as $header)
                                         <th>{{ $header }}</th>
                                     @endforeach

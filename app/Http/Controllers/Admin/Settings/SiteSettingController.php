@@ -31,7 +31,10 @@ class SiteSettingController extends Controller
     public function editFooter()
     {
         return Inertia::render('Admin/Settings/Footer/Edit', [
-            'footer' => SiteSetting::getRaw('footer')
+            'footer' => array_replace_recursive(
+                $this->defaultFooter(),
+                SiteSetting::getRaw('footer') ?? []
+            )
         ]);
     }
 
@@ -43,6 +46,16 @@ class SiteSettingController extends Controller
 
     public function updateFooter(Request $request)
     {
+        $normalizedEmails = collect($request->input('emails', []))
+            ->map(fn ($email) => is_string($email) ? trim($email) : '')
+            ->filter()
+            ->values()
+            ->all();
+
+        $request->merge([
+            'emails' => $normalizedEmails,
+        ]);
+
         $validated = $request->validate([
             'sections_title.es' => 'required|string|max:255',
             'sections_title.en' => 'required|string|max:255',
@@ -60,11 +73,14 @@ class SiteSettingController extends Controller
 
             'phone' => 'required|string|max:50',
             'whatsapp' => 'required|string|max:50',
-            'email' => 'required|email|max:255',
+            'emails' => 'required|array|min:1',
+            'emails.*' => 'required|email|max:255|distinct',
 
             'copyright.es' => 'required|string|max:255',
             'copyright.en' => 'required|string|max:255',
         ]);
+
+        $validated['email'] = $validated['emails'][0];
 
         SiteSetting::updateOrCreate(
             ['key' => 'footer'],
@@ -136,6 +152,37 @@ class SiteSettingController extends Controller
                 'en' => 'Hello, I would like to receive advice about special cables.',
             ],
             'bottom_offset' => 67,
+        ];
+    }
+
+    private function defaultFooter(): array
+    {
+        return [
+            'sections_title' => [
+                'es' => 'Secciones',
+                'en' => 'Sections',
+            ],
+            'newsletter_title' => [
+                'es' => 'Newsletter',
+                'en' => 'Newsletter',
+            ],
+            'contact_title' => [
+                'es' => 'Contacto',
+                'en' => 'Contact',
+            ],
+            'address' => [
+                'es' => '',
+                'en' => '',
+            ],
+            'map_url' => '',
+            'phone' => '',
+            'whatsapp' => '',
+            'email' => '',
+            'emails' => [''],
+            'copyright' => [
+                'es' => 'Todos los derechos reservados.',
+                'en' => 'All rights reserved.',
+            ],
         ];
     }
 }

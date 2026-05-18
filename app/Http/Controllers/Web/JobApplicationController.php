@@ -29,8 +29,15 @@ class JobApplicationController extends Controller
             'job_position_id'   => 'required|exists:job_positions,id',
             'job_sector_id'     => 'required|exists:job_sectors,id',
 
-            'cv_path'           => 'required|file|mimes:pdf,doc,docx|max:5120',
-            'cover_letter_path' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'cv_path'           => 'required|file|mimes:pdf,doc,docx|max:10240',
+            'cover_letter_path' => 'required|file|mimes:pdf,doc,docx|max:10240',
+        ], [
+            'cv_path.required' => __('messages.upload_cv_required'),
+            'cv_path.mimes' => __('messages.upload_allowed_files'),
+            'cv_path.max' => __('messages.upload_max_size'),
+            'cover_letter_path.required' => __('messages.upload_cover_letter_required'),
+            'cover_letter_path.mimes' => __('messages.upload_allowed_files'),
+            'cover_letter_path.max' => __('messages.upload_max_size'),
         ]);
 
         // Guardar CV en almacenamiento privado (no accesible vía URL pública)

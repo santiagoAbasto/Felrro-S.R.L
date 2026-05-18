@@ -8,10 +8,12 @@ use App\Models\ProductCategory;
 use App\Models\ProductIcon;
 use App\Models\ProductImportBatch;
 use App\Services\AflamexPotenciaImportService;
+use App\Services\InstrumentationImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProductTechnicalImportController extends Controller
 {
@@ -42,7 +44,11 @@ class ProductTechnicalImportController extends Controller
         ]);
     }
 
-    public function store(Request $request, AflamexPotenciaImportService $importService)
+    public function store(
+        Request $request,
+        AflamexPotenciaImportService $potenciaImportService,
+        InstrumentationImportService $instrumentationImportService
+    )
     {
         $validated = $request->validate([
             'category_id' => ['required', 'integer', 'exists:product_categories,id'],
@@ -54,6 +60,12 @@ class ProductTechnicalImportController extends Controller
         ]);
 
         $category = ProductCategory::query()->findOrFail($validated['category_id']);
+        $technicalPath = $request->file('technical_excel')->getRealPath();
+        $reader = IOFactory::createReaderForFile($technicalPath);
+        $sheetNames = $reader->listWorksheetNames($technicalPath);
+        $importService = $instrumentationImportService->supports($sheetNames)
+            ? $instrumentationImportService
+            : $potenciaImportService;
 
         $result = $importService->import(
             $category,

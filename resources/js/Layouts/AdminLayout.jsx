@@ -10,6 +10,7 @@ export default function AdminLayout({ children }) {
         <div className="flex min-h-screen bg-[#f8fafc] font-sans text-slate-900">
 
             <Toast message={flash.success} type="success" />
+            <Toast message={flash.error} type="error" />
 
             <div className="hidden xl:block">
                 <Sidebar />

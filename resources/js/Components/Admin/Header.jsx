@@ -21,6 +21,7 @@ const titleMap = [
     { match: "/admin/contact", title: "Contacto", description: "Editá datos de contacto y revisá mensajes recibidos." },
     { match: "/admin/comercial/quotations", title: "Cotización", description: "Seguimiento simple de las solicitudes comerciales." },
     { match: "/admin/newsletter", title: "Newsletter", description: "Gestioná suscriptores y envíos desde una sola pantalla." },
+    { match: "/admin/settings/footer", title: "Footer", description: "Administrá el pie del sitio, sus contactos visibles y los textos de cierre." },
     { match: "/admin/settings/floating-whatsapp", title: "WhatsApp flotante", description: "Administrá el acceso flotante visible en la web pública." },
     { match: "/admin/seo", title: "Metadatos SEO", description: "Definí cómo se presenta cada página en buscadores y redes." },
 ];

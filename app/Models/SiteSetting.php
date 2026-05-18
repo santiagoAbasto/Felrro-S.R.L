@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class SiteSetting extends Model
 {
+    private const CACHE_PREFIX = 'site_setting:';
+
     protected $fillable = [
         'key',
         'value'
@@ -14,6 +17,17 @@ class SiteSetting extends Model
     protected $casts = [
         'value' => 'array', // 🔥 JSON multilenguaje
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $setting): void {
+            static::forgetCachedValue($setting->key);
+        });
+
+        static::deleted(function (self $setting): void {
+            static::forgetCachedValue($setting->key);
+        });
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -41,7 +55,7 @@ class SiteSetting extends Model
 
     public static function get(string $key): ?string
     {
-        $setting = static::where('key', $key)->first();
+        $setting = static::rememberSetting($key);
 
         if (!$setting) {
             return null;
@@ -58,12 +72,30 @@ class SiteSetting extends Model
 
     public static function getRaw(string $key): ?array
     {
-        $setting = static::where('key', $key)->first();
+        $setting = static::rememberSetting($key);
 
         if (!$setting) {
             return null;
         }
 
         return $setting->value; // gracias al cast devuelve array
+    }
+
+    private static function rememberSetting(string $key): ?self
+    {
+        return Cache::rememberForever(
+            static::cacheKey($key),
+            fn () => static::query()->where('key', $key)->first()
+        );
+    }
+
+    private static function forgetCachedValue(string $key): void
+    {
+        Cache::forget(static::cacheKey($key));
+    }
+
+    private static function cacheKey(string $key): string
+    {
+        return static::CACHE_PREFIX . $key;
     }
 }

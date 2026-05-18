@@ -31,6 +31,12 @@
                 <li>
                     {{ $item->product->getName() }}
                     — {{ $item->metros }} metros
+                    @if($item->variant_snapshot)
+                        <br>Formación: {{ $item->variant_snapshot['formation'] ?? '--' }}
+                        <br>Código: {{ $item->variant_snapshot['code'] ?? '--' }}
+                        <br>Ø en mm: {{ $item->variant_snapshot['diameter'] ?? '--' }}
+                        <br>Peso kg/km: {{ $item->variant_snapshot['weight'] ?? '--' }}
+                    @endif
                 </li>
             @endforeach
         </ul>

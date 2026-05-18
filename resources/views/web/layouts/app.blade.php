@@ -1,7 +1,30 @@
 <!DOCTYPE html>
-<html lang="{{ $htmlLang }}">
+<html lang="{{ $htmlLang }}" class="web-pending">
 <head>
+    @php
+        $webManifest = [];
+        $webManifestPath = public_path('build/manifest.json');
+
+        if (is_file($webManifestPath)) {
+            $webManifest = json_decode(file_get_contents($webManifestPath), true) ?: [];
+        }
+
+        $webCssAsset = $webManifest['resources/css/web.css']['file'] ?? null;
+        $webJsAsset = $webManifest['resources/js/web.js']['file'] ?? null;
+    @endphp
+
     <meta charset="UTF-8">
+    <style>
+        html.web-pending body {
+            visibility: hidden;
+            opacity: 0;
+        }
+    </style>
+    <script>
+        window.addEventListener('load', function () {
+            document.documentElement.classList.remove('web-pending');
+        });
+    </script>
 
     <title>{{ $metaTitle }}</title>
     <meta name="description" content="{{ $metaDescription }}">
@@ -40,11 +63,24 @@
     <script type="application/ld+json">{!! $structuredDataJson !!}</script>
     @endif
 
-    {{-- ANTI-FOUC: ocultar body hasta que CSS esté listo --}}
-    <style>body{visibility:hidden;}</style>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    @vite(['resources/js/web.js'])
+    @if($webCssAsset)
+    <link
+        rel="stylesheet"
+        href="{{ asset('build/'.$webCssAsset) }}"
+        onload="document.documentElement.classList.remove('web-pending')">
+    @endif
+    @if($webJsAsset)
+    <script type="module" src="{{ asset('build/'.$webJsAsset) }}"></script>
+    @endif
+    <noscript>
+        <style>
+            html.web-pending body {
+                visibility: visible;
+                opacity: 1;
+            }
+        </style>
+    </noscript>
 </head>
 <body>
 
@@ -71,13 +107,6 @@
         </span>
     </a>
     @endif
-
-    {{-- ANTI-FOUC: mostrar body cuando DOM + CSS listos --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.body.style.visibility = 'visible';
-        });
-    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

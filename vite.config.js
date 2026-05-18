@@ -24,11 +24,11 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                // DMIN (Inertia + React)
+                // ADMIN (Inertia + React)
                 'resources/js/app.jsx',
-                'resources/css/app.css',
 
                 // WEB CORPORATIVA (Blade)
+                'resources/css/web.css',
                 'resources/js/web.js',
             ],
             refresh: true,

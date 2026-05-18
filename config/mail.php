@@ -115,4 +115,11 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    'recipients' => [
+        'sales' => env('MAIL_SALES_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+        'contact' => env('MAIL_CONTACT_ADDRESS', env('MAIL_SALES_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com'))),
+        'quotation' => env('MAIL_QUOTATION_ADDRESS', env('MAIL_SALES_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com'))),
+        'newsletter' => env('MAIL_NEWSLETTER_ADDRESS', env('MAIL_SALES_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com'))),
+    ],
+
 ];

@@ -1,11 +1,10 @@
 import AdminLayout from "@/Layouts/AdminLayout";
-import { Head, useForm, Link } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import Form from "./Form";
 import { AdminPageHeader } from "@/Components/Admin/FormElements";
 
 export default function Create() {
-
     const { data, setData, post, processing, errors } = useForm({
         name: { es: "", en: "" },
         order: "",
@@ -16,24 +15,23 @@ export default function Create() {
         is_active: true,
     });
 
-    const submit = (e) => {
-        e.preventDefault();
+    const submit = (event) => {
+        event.preventDefault();
 
         post(route("admin.certificates.store"), {
             forceFormData: true,
-            preserveScroll: true
         });
     };
 
     return (
         <AdminLayout>
-            <Head title="Nuevo certificado" />
+            <Head title="Crear certificado" />
 
             <div className="space-y-8">
                 <AdminPageHeader
                     eyebrow="Calidad"
                     title="Nuevo certificado"
-                    description="Cargá el documento y, si querés, su logo. Todo queda preparado para mostrarse dentro de la sección Calidad."
+                    description="Cargá el documento, su logo y el orden de publicación para que quede disponible en la web."
                     actions={
                         <Link
                             href={route("admin.certificates.index")}
@@ -51,7 +49,7 @@ export default function Create() {
                         errors={errors}
                         processing={processing}
                         submit={submit}
-                        buttonText="Guardar certificado"
+                        buttonText="Crear certificado"
                     />
                 </div>
             </div>

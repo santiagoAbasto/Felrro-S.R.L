@@ -6,6 +6,7 @@ import { AdminPageHeader, AdminSectionCard } from "@/Components/Admin/FormElemen
 
 export default function Index({ products, stats }) {
     const [loadingId, setLoadingId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
     const [search, setSearch] = useState("");
 
     const filteredProducts = useMemo(() => {
@@ -36,7 +37,12 @@ export default function Index({ products, stats }) {
             return;
         }
 
-        router.delete(route("admin.products.destroy", id), { preserveScroll: true });
+        setDeletingId(id);
+
+        router.delete(route("admin.products.destroy", id), {
+            preserveScroll: true,
+            onFinish: () => setDeletingId(null),
+        });
     };
 
     return (
@@ -161,10 +167,13 @@ export default function Index({ products, stats }) {
                                                     </Link>
                                                     <button
                                                         type="button"
+                                                        disabled={deletingId === product.id}
                                                         onClick={() => destroy(product.id)}
-                                                        className="rounded-2xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-50"
+                                                        className={`rounded-2xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-50 ${
+                                                            deletingId === product.id ? "cursor-not-allowed opacity-60" : ""
+                                                        }`}
                                                     >
-                                                        Eliminar
+                                                        {deletingId === product.id ? "Eliminando..." : "Eliminar"}
                                                     </button>
                                                 </div>
                                             </td>

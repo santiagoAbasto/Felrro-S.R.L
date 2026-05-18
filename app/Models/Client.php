@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Support\MediaPath;
 
 class Client extends Model
 {
@@ -49,9 +50,7 @@ class Client extends Model
 
     public function getLogoUrlAttribute(): ?string
     {
-        return $this->logo
-            ? asset('storage/' . $this->logo)
-            : null;
+        return MediaPath::imageAsset($this->logo, asset('images/logo.png'));
     }
 
     /*

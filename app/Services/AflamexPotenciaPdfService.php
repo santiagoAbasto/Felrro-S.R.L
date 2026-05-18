@@ -13,6 +13,7 @@ class AflamexPotenciaPdfService
     {
         $product->load([
             'applications',
+            'category',
             'technicalSections.rows',
             'icons',
         ]);

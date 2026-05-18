@@ -157,7 +157,9 @@ $allSlides->push([
                     <img
                         src="{{ $category->image_url }}"
                         alt="{{ $category->getName() ?? 'Categoría' }}"
-                        loading="lazy">
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low">
                 </div>
 
                 <div class="fc-card__footer">
@@ -199,9 +201,7 @@ $allSlides->push([
 
         {{-- IMAGEN --}}
         <div class="about-image"
-            style="background-image: url('{{ $aboutPreview->image
-                ? asset('storage/' . $aboutPreview->image)
-                : asset('images/nosotros.png') }}');">
+            style="background-image: url('{{ $aboutPreview->image_url ?: asset('images/logo.png') }}');">
         </div>
 
         {{-- CONTENIDO --}}
@@ -243,6 +243,7 @@ $allSlides->push([
     PRODUCTOS DESTACADOS
     → resources/views/web/home.blade.php
 ========================================================= --}}
+@if($featuredProducts->isNotEmpty())
 <section class="fp-section">
 
     <div class="fp-container">
@@ -253,14 +254,16 @@ $allSlides->push([
 
         <div class="fp-grid">
 
-            @forelse($featuredProducts as $product)
+            @foreach($featuredProducts as $product)
 
             <a href="{{ route('productos.show', $product->slug) }}" class="fp-card">
 
                 <div class="fp-card__img">
                     <img src="{{ $product->image_url ?? asset('images/default-product.png') }}"
                         alt="{{ $product->getName() ?? 'Producto' }}"
-                        loading="lazy">
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low">
                 </div>
 
                 <div class="fp-card__content">
@@ -281,17 +284,14 @@ $allSlides->push([
 
             </a>
 
-            @empty
-            <div class="fp-empty">
-                {{ __('messages.no_featured_products') }}
-            </div>
-            @endforelse
+            @endforeach
 
         </div>
 
     </div>
 
 </section>
+@endif
 
 
 {{-- =========================================================
@@ -322,7 +322,9 @@ $allSlides->push([
                     <div class="nv-card__img">
                         <img src="{{ $post->image_url }}"
                             alt="{{ $post->getTitle() ?? 'Noticia' }}"
-                            loading="lazy">
+                            loading="lazy"
+                            decoding="async"
+                            fetchpriority="low">
                     </div>
 
                     <div class="nv-card__content">

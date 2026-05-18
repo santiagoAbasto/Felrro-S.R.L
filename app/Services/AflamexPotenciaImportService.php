@@ -522,7 +522,7 @@ class AflamexPotenciaImportService
 
     private function coverExtras(Worksheet $sheet, int $col): array
     {
-        $optional = $this->joinRows($sheet, $col, [50, 51, 52, 53]);
+        $optional = $this->cleanComment($this->joinRows($sheet, $col, [50, 51, 52, 53]));
         $items = [];
 
         if ($optional !== '') {
@@ -673,7 +673,9 @@ class AflamexPotenciaImportService
 
     private function cleanComment(string $text): string
     {
-        return trim(preg_replace('/\/\/.*$/', '', $text) ?? '');
+        return trim((string) Str::of($text)
+            ->replaceMatches('/\s*\/\/\s*/u', ' / ')
+            ->replaceMatches('/\s+/', ' '));
     }
 
     private function nullableText(string $value): ?string

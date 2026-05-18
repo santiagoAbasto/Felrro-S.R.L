@@ -49,14 +49,6 @@ class HomeController extends Controller
             ->orderBy('featured_order')
             ->get();
 
-        if ($featuredProducts->isEmpty()) {
-            $featuredProducts = Product::query()
-                ->with('category')
-                ->where('is_active', true)
-                ->take(4)
-                ->get();
-        }
-
         $latestPosts = Post::published()
             ->where('is_featured', true)
             ->latest('published_at')

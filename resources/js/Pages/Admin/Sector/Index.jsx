@@ -48,6 +48,7 @@ export default function Index({ sectors }) {
                                 <th className="px-6 py-4">Orden</th>
                                 <th className="px-6 py-4">Imagen</th>
                                 <th className="px-6 py-4">Nombre (ES)</th>
+                                <th className="px-6 py-4">Relacionados</th>
                                 <th className="px-6 py-4">Activo</th>
                                 <th className="px-6 py-4 text-right">Acciones</th>
                             </tr>
@@ -57,7 +58,7 @@ export default function Index({ sectors }) {
 
                             {sectors.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-8 text-center text-gray-400">
+                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-400">
                                         No hay sectores registrados.
                                     </td>
                                 </tr>
@@ -92,6 +93,12 @@ export default function Index({ sectors }) {
                                     {/* NOMBRE */}
                                     <td className="px-6 py-4 font-medium text-gray-800">
                                         {sector.name?.es}
+                                    </td>
+
+                                    <td className="px-6 py-4">
+                                        <span className="inline-block rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                                            {sector.related_products_count ?? 0} producto{(sector.related_products_count ?? 0) === 1 ? "" : "s"}
+                                        </span>
                                     </td>
 
                                     {/* ACTIVO */}

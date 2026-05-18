@@ -381,32 +381,48 @@ class ProductController extends Controller
     ======================================================= */
     public function destroy(Product $product)
     {
-        if ($product->quotationItems()->exists()) {
-            return back()->withErrors(
-                'No se puede eliminar un producto con cotizaciones asociadas.'
-            );
+        try {
+            DB::transaction(function () use ($product) {
+                $product->loadMissing([
+                    'images',
+                    'technicalSections.rows',
+                    'icons',
+                    'sectors',
+                ]);
+
+                foreach ([
+                    $product->image,
+                    $product->ficha_tecnica_file,
+                    $product->pdf_graphic,
+                    $product->pdf_color_table,
+                ] as $path) {
+                    if ($path) {
+                        Storage::disk('public')->delete($path);
+                    }
+                }
+
+                foreach ($product->images as $image) {
+                    if ($image->image) {
+                        Storage::disk('public')->delete($image->image);
+                    }
+                }
+
+                $product->icons()->detach();
+                $product->sectors()->detach();
+                $product->technicalSections()->delete();
+                $product->images()->delete();
+                $product->specifications()->delete();
+                $product->applications()->delete();
+
+                // Soft delete: mantiene integridad del historial comercial
+                // y deja el catálogo limpio para el admin.
+                $product->delete();
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'No se pudo eliminar el producto. Intentá nuevamente.');
         }
-
-        DB::transaction(function () use ($product) {
-
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
-
-            if ($product->ficha_tecnica_file) {
-                Storage::disk('public')->delete($product->ficha_tecnica_file);
-            }
-
-            foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image->image);
-            }
-
-            $product->images()->delete();
-            $product->specifications()->delete();
-            $product->applications()->delete();
-
-            $product->delete();
-        });
 
         return back()->with('success', 'Producto eliminado correctamente.');
     }
@@ -553,8 +569,15 @@ class ProductController extends Controller
                     ->values()
                     ->all();
 
+                $technicalMeta = $this->extractTechnicalRowMetaFromHeaders($headers, $rawValues);
+
                 $section->rows()->create([
                     'formation' => trim((string) ($rowData['formation'] ?? '')),
+                    'code' => $technicalMeta['code'],
+                    'code_pe' => $technicalMeta['code_pe'],
+                    'code_neutral' => $technicalMeta['code_neutral'],
+                    'diameter' => $technicalMeta['diameter'],
+                    'weight' => $technicalMeta['weight'],
                     'values' => [
                         'headers' => $headers,
                         'raw' => $rawValues,
@@ -569,6 +592,49 @@ class ProductController extends Controller
         if ($idsToDelete) {
             $product->technicalSections()->whereIn('id', $idsToDelete)->delete();
         }
+    }
+
+    private function extractTechnicalRowMetaFromHeaders(array $headers, array $rawValues): array
+    {
+        $meta = [
+            'code' => null,
+            'code_pe' => null,
+            'code_neutral' => null,
+            'diameter' => null,
+            'weight' => null,
+        ];
+
+        foreach ($headers as $index => $header) {
+            $normalizedHeader = Str::lower(trim((string) $header));
+            $value = trim((string) ($rawValues[$index] ?? ''));
+
+            if ($value === '') {
+                continue;
+            }
+
+            if (str_contains($normalizedHeader, 'código') || str_contains($normalizedHeader, 'codigo')) {
+                if (str_contains($normalizedHeader, 'neut')) {
+                    $meta['code_neutral'] = $value;
+                } elseif (str_contains($normalizedHeader, 'pe') || str_contains($normalizedHeader, 'tierra')) {
+                    $meta['code_pe'] = $value;
+                } else {
+                    $meta['code'] = $value;
+                }
+
+                continue;
+            }
+
+            if (str_contains($normalizedHeader, 'ø') || str_contains($normalizedHeader, 'diam')) {
+                $meta['diameter'] = $value;
+                continue;
+            }
+
+            if (str_contains($normalizedHeader, 'peso')) {
+                $meta['weight'] = $value;
+            }
+        }
+
+        return $meta;
     }
 
     /* =======================================================

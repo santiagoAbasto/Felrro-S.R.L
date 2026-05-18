@@ -55,8 +55,10 @@ $video = $page->sections->where('type','about_video')->first();
             @if(!empty($main->image))
             <div class="about-page-image">
                 <img
-                    src="{{ asset('storage/' . $main->image) }}"
-                    alt="{{ $main->title[$locale] ?? 'About Felrro' }}">
+                    src="{{ $main->image_url }}"
+                    alt="{{ $main->title[$locale] ?? 'About Felrro' }}"
+                    loading="lazy"
+                    decoding="async">
             </div>
             @endif
 

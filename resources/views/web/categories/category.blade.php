@@ -66,10 +66,12 @@
 
                         {{-- CONTENIDO --}}
                         <div class="pc-card__content">
-                            <span class="pc-card__category">
-                                {{ strtoupper($category->getName()) }}
-                            </span>
-                            <h3 class="pc-card__name">{{ $product->getName() }}</h3>
+                            <div class="pc-card__heading">
+                                <span class="pc-card__category">
+                                    {{ strtoupper($category->getName()) }}
+                                </span>
+                                <h3 class="pc-card__name">{{ $product->getName() }}</h3>
+                            </div>
                             <p class="pc-card__desc">{{ $product->getShortDescription() }}</p>
                         </div>
 

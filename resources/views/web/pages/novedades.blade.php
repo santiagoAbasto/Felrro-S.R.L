@@ -27,70 +27,41 @@
 
             @forelse($posts as $post)
 
-            <article class="novedad-card">
+            <a href="{{ route('novedades.show', $post->slug) }}" class="novedad-card-link">
+                <article class="novedad-card">
 
-                {{-- IMAGEN --}}
-                <img src="{{ $post->image_url }}"
-                    alt="{{ $post->getTitle() }}">
+                    <img
+                        src="{{ $post->image_url }}"
+                        alt="{{ $post->getTitle() }}"
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low">
 
-                <div class="novedad-content">
+                    <div class="novedad-content">
+                        @if($post->getCategory())
+                        <span class="novedad-tag">
+                            {{ strtoupper($post->getCategory()) }}
+                        </span>
+                        @endif
 
-                    {{-- CATEGORIA --}}
-                    @if($post->getCategory())
-                    <span class="novedad-tag">
-                        {{ strtoupper($post->getCategory()) }}
-                    </span>
-                    @endif
+                        <h4>{{ $post->getTitle() }}</h4>
 
-                    {{-- TITULO --}}
-                    <h4>{{ $post->getTitle() }}</h4>
+                        @if($post->getExcerpt())
+                        <p>{{ $post->getExcerpt() }}</p>
+                        @endif
 
-                    {{-- EXCERPT --}}
-                    @if($post->getExcerpt())
-                    <p>{{ $post->getExcerpt() }}</p>
-                    @endif
+                        <span class="leer-mas">
+                            <span>{{ __('messages.read_more') ?? 'Leer más' }}</span>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M5 12H19M19 12L12 5M19 12L12 19"
+                                    stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </span>
+                    </div>
 
-                    {{-- LINK --}}
-                    <a href="{{ route('novedades.show', $post->slug) }}" class="novedad-card-link">
-
-                        <article class="novedad-card">
-
-                            {{-- IMAGEN --}}
-                            <img src="{{ $post->image_url }}"
-                                alt="{{ $post->getTitle() }}">
-
-                            <div class="novedad-content">
-
-                                @if($post->getCategory())
-                                <span class="novedad-tag">
-                                    {{ strtoupper($post->getCategory()) }}
-                                </span>
-                                @endif
-
-                                <h4>{{ $post->getTitle() }}</h4>
-
-                                @if($post->getExcerpt())
-                                <p>{{ $post->getExcerpt() }}</p>
-                                @endif
-
-                                <span class="leer-mas">
-                                    <span>{{ __('messages.read_more') ?? 'Leer más' }}</span>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                        <path d="M5 12H19M19 12L12 5M19 12L12 19"
-                                            stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </span>
-
-                            </div>
-
-                        </article>
-
-                    </a>
-
-                </div>
-
-            </article>
+                </article>
+            </a>
 
             @empty
 

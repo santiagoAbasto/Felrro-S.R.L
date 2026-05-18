@@ -35,6 +35,7 @@ class WebLayoutComposer
         $view->with(array_merge(
             $this->seoVariables($seoMeta, $data),
             $this->assetVariables(),
+            $this->footerVariables(),
             $this->whatsappVariables(),
         ));
     }
@@ -74,6 +75,13 @@ class WebLayoutComposer
             'fallbackFaviconIcoUrl' => $this->versionedAsset('favicon.ico'),
             'appleTouchIconUrl' => $this->versionedAsset('favicon/apple-touch-icon.png'),
             'manifestUrl' => $this->versionedAsset('favicon/site.webmanifest'),
+        ];
+    }
+
+    private function footerVariables(): array
+    {
+        return [
+            'footerSettings' => SiteSetting::getRaw('footer') ?? [],
         ];
     }
 

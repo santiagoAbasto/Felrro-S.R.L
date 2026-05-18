@@ -84,10 +84,11 @@ const navigation = [
         ],
     },
     {
-        title: "WhatsApp flotante",
-        icon: "solar:chat-round-call-outline",
+        title: "Configuración",
+        icon: "solar:settings-outline",
         children: [
-            { title: "Configuración", url: "/admin/settings/floating-whatsapp", icon: "solar:smartphone-update-outline" },
+            { title: "WhatsApp flotante", url: "/admin/settings/floating-whatsapp", icon: "solar:smartphone-update-outline" },
+            { title: "Footer", url: "/admin/settings/footer", icon: "solar:sidebar-code-outline" },
         ],
     },
     {
