@@ -223,6 +223,17 @@ class ProductController extends Controller
                     $validated['image'] = $newImage;
                     $validated['pdf_graphic'] = null;
                 }
+            } elseif ($request->boolean('remove_image')) {
+                if ($product->image && Storage::disk('public')->exists($product->image)) {
+                    Storage::disk('public')->delete($product->image);
+                }
+
+                if ($product->pdf_graphic && Storage::disk('public')->exists($product->pdf_graphic)) {
+                    Storage::disk('public')->delete($product->pdf_graphic);
+                }
+
+                $validated['image'] = null;
+                $validated['pdf_graphic'] = null;
             } else {
                 // ⚠️ CRÍTICO: preservar imagen actual
                 unset($validated['image']);
@@ -288,6 +299,20 @@ class ProductController extends Controller
                             'order' => $index + 1
                         ]);
                     }
+                }
+            }
+
+            if (!$request->hasFile('gallery') && $request->filled('deleted_gallery_images')) {
+                $imagesToDelete = $product->images()
+                    ->whereIn('id', $request->input('deleted_gallery_images', []))
+                    ->get();
+
+                foreach ($imagesToDelete as $image) {
+                    if ($image->image && Storage::disk('public')->exists($image->image)) {
+                        Storage::disk('public')->delete($image->image);
+                    }
+
+                    $image->delete();
                 }
             }
 
@@ -442,9 +467,17 @@ class ProductController extends Controller
             'description.en' => 'nullable|string',
 
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
 
             'gallery'   => 'nullable|array',
             'gallery.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'deleted_gallery_images' => 'nullable|array',
+            'deleted_gallery_images.*' => [
+                'integer',
+                Rule::exists('product_images', 'id')->where(fn ($query) => $product
+                    ? $query->where('product_id', $product->id)
+                    : $query),
+            ],
 
             'ficha_tecnica_file' => 'nullable|file|mimes:pdf|max:5120',
 

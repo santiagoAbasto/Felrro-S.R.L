@@ -5,6 +5,7 @@ import {
     AdminTextInput,
     AdminToggle,
 } from "@/Components/Admin/FormElements";
+import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
 
 const IMAGE_MAX_MB = 5;
@@ -22,6 +23,9 @@ export default function ProductForm({
     const [mainImagePreview, setMainImagePreview] = useState(null);
     const [galleryPreview, setGalleryPreview] = useState([]);
     const [galleryError, setGalleryError] = useState("");
+    const visibleExistingGallery = (data.existing_gallery ?? []).filter(
+        (image) => !(data.deleted_gallery_images ?? []).includes(image.id)
+    );
 
     useEffect(() => {
         if (!(data.image instanceof File)) {
@@ -63,6 +67,31 @@ export default function ProductForm({
 
         setGalleryError(invalidMessages.join(" "));
         setData("gallery", validFiles);
+    };
+
+    const handleMainImageChange = (file) => {
+        setData({
+            ...data,
+            image: file,
+            remove_image: false,
+        });
+    };
+
+    const removeMainImage = () => {
+        setData({
+            ...data,
+            image: null,
+            existing_image: null,
+            remove_image: true,
+        });
+    };
+
+    const removeGalleryImage = (imageId) => {
+        setData({
+            ...data,
+            existing_gallery: (data.existing_gallery ?? []).filter((image) => image.id !== imageId),
+            deleted_gallery_images: [...(data.deleted_gallery_images ?? []), imageId],
+        });
     };
 
     return (
@@ -133,7 +162,7 @@ export default function ProductForm({
                 <AdminFileField
                     label="Imagen principal"
                     value={data.image}
-                    onChange={(file) => setData("image", file)}
+                    onChange={handleMainImageChange}
                     accept="image/png,image/jpeg,image/webp"
                     maxSizeMB={IMAGE_MAX_MB}
                     previewUrl={mainImagePreview}
@@ -143,17 +172,34 @@ export default function ProductForm({
                     error={errors.image}
                     buttonLabel={data.existing_image ? "Reemplazar imagen" : "Seleccionar imagen"}
                 />
+
+                {data.existing_image ? (
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={removeMainImage}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-50"
+                        >
+                            <Icon icon="solar:trash-bin-trash-outline" width={16} />
+                            Eliminar imagen principal
+                        </button>
+                    </div>
+                ) : data.remove_image ? (
+                    <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                        La imagen principal se eliminará al guardar.
+                    </p>
+                ) : null}
             </AdminSectionCard>
 
             <AdminSectionCard
                 title="Galería del producto"
-                description="Si querés actualizar la galería, subí nuevamente el conjunto completo de imágenes. La vista previa te muestra lo que se guardará."
+                description="Podés eliminar imágenes actuales una por una o subir un nuevo conjunto completo. La vista previa te muestra lo que se guardará."
             >
-                {data.existing_gallery?.length > 0 && data.gallery.length === 0 ? (
+                {visibleExistingGallery.length > 0 && data.gallery.length === 0 ? (
                     <div>
                         <p className="mb-3 text-sm font-semibold text-slate-700">Galería actual</p>
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            {data.existing_gallery.map((image) => (
+                            {visibleExistingGallery.map((image) => (
                                 <div
                                     key={image.id}
                                     className="overflow-hidden rounded-[22px] border border-slate-200 bg-white"
@@ -163,10 +209,24 @@ export default function ProductForm({
                                         alt="Imagen de galería"
                                         className="h-36 w-full object-contain bg-slate-50"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeGalleryImage(image.id)}
+                                        className="flex w-full items-center justify-center gap-2 border-t border-red-100 px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-50"
+                                    >
+                                        <Icon icon="solar:trash-bin-trash-outline" width={14} />
+                                        Eliminar imagen
+                                    </button>
                                 </div>
                             ))}
                         </div>
                     </div>
+                ) : null}
+
+                {(data.deleted_gallery_images ?? []).length > 0 ? (
+                    <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                        {(data.deleted_gallery_images ?? []).length} imagen(es) de galería se eliminarán al guardar.
+                    </p>
                 ) : null}
 
                 <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50/80 p-5">
