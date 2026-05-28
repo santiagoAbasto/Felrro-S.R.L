@@ -144,7 +144,13 @@ class Product extends Model
     {
         if (!$this->ficha_tecnica_file) return null;
 
-        return asset('storage/' . $this->ficha_tecnica_file);
+        $url = asset('storage/' . $this->ficha_tecnica_file);
+
+        if (Storage::disk('public')->exists($this->ficha_tecnica_file)) {
+            return $url . '?v=' . Storage::disk('public')->lastModified($this->ficha_tecnica_file);
+        }
+
+        return $url;
     }
 
     public function getPdfGraphicUrlAttribute(): ?string

@@ -42,9 +42,9 @@ class InstrumentationImportService
         return empty(array_diff(array_keys(self::SHEETS), $normalized));
     }
 
-    public function import(ProductCategory $category, UploadedFile $technicalFile, ?UploadedFile $coverFile, array $iconIds = [], ?UploadedFile $colorTableFile = null): array
+    public function import(ProductCategory $category, UploadedFile $technicalFile, ?UploadedFile $coverFile, array $iconSettings = [], ?UploadedFile $colorTableFile = null): array
     {
-        return DB::transaction(function () use ($category, $technicalFile, $coverFile, $iconIds, $colorTableFile) {
+        return DB::transaction(function () use ($category, $technicalFile, $coverFile, $iconSettings, $colorTableFile) {
             $batch = ProductImportBatch::create([
                 'user_id' => auth()->id(),
                 'technical_file' => $technicalFile->getClientOriginalName(),
@@ -77,7 +77,7 @@ class InstrumentationImportService
                 }
 
                 $this->syncProductBlocks($product, $cover);
-                $this->syncProductIcons($product, $iconIds);
+                $this->syncProductIcons($product, $iconSettings);
                 $technicalStats = $this->syncTechnicalData($product, $sheet, $batch);
 
                 $this->pdfService->generate($product);
@@ -214,21 +214,45 @@ class InstrumentationImportService
         }
     }
 
-    private function syncProductIcons(Product $product, array $iconIds): void
+    private function syncProductIcons(Product $product, array $iconSettings): void
     {
         $sync = [];
+        $selected = collect($iconSettings)
+            ->map(function ($item) {
+                if (is_array($item)) {
+                    $group = strtolower(trim((string) ($item['pdf_group'] ?? 'main')));
+
+                    return [
+                        'id' => (int) ($item['id'] ?? 0),
+                        'pdf_group' => in_array($group, ['main', 'optional', 'footer'], true) ? $group : 'main',
+                        'order' => max(1, min(10, (int) ($item['order'] ?? 1))),
+                    ];
+                }
+
+                return [
+                    'id' => (int) $item,
+                    'pdf_group' => 'main',
+                    'order' => 1,
+                ];
+            })
+            ->filter(fn ($item) => $item['id'] > 0)
+            ->unique('id')
+            ->groupBy('pdf_group')
+            ->flatMap(fn ($items) => $items->sortBy('order')->take(10))
+            ->values();
+
         $icons = \App\Models\ProductIcon::query()
-            ->whereIn('id', array_values(array_unique(array_filter($iconIds))))
+            ->whereIn('id', $selected->pluck('id')->all())
             ->get()
             ->keyBy('id');
 
-        foreach (array_values(array_unique(array_filter($iconIds))) as $index => $iconId) {
-            $icon = $icons->get((int) $iconId);
+        foreach ($selected as $index => $item) {
+            $icon = $icons->get($item['id']);
 
-            $sync[(int) $iconId] = [
-                'order' => $index + 1,
+            $sync[$item['id']] = [
+                'order' => $item['order'],
                 'show_in_pdf' => true,
-                'pdf_group' => $icon?->placement === 'footer' ? 'footer' : 'main',
+                'pdf_group' => $icon?->placement === 'footer' ? 'footer' : $item['pdf_group'],
             ];
         }
 

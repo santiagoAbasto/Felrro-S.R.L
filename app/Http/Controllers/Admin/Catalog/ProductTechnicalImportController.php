@@ -22,8 +22,8 @@ class ProductTechnicalImportController extends Controller
         return Inertia::render('Admin/Catalog/TechnicalImport/Index', [
             'icons' => ProductIcon::query()
                 ->where('is_active', true)
-                ->orderBy('order')
                 ->orderBy('name->es')
+                ->orderBy('order')
                 ->get(),
             'categories' => ProductCategory::query()
                 ->where('is_active', true)
@@ -55,9 +55,22 @@ class ProductTechnicalImportController extends Controller
             'technical_excel' => ['required', 'file', 'mimes:xlsx', 'max:10240'],
             'cover_excel' => ['nullable', 'file', 'mimes:xlsx', 'max:10240'],
             'pdf_color_table' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'icon_settings' => ['nullable', 'array'],
+            'icon_settings.*.id' => ['required', 'integer', 'exists:product_icons,id'],
+            'icon_settings.*.pdf_group' => ['required', 'in:main,optional,footer'],
+            'icon_settings.*.order' => ['nullable', 'integer', 'min:1', 'max:10'],
             'icon_ids' => ['nullable', 'array'],
             'icon_ids.*' => ['integer', 'exists:product_icons,id'],
         ]);
+
+        $iconSettings = $validated['icon_settings'] ?? collect($validated['icon_ids'] ?? [])
+            ->values()
+            ->map(fn ($id, $index) => [
+                'id' => (int) $id,
+                'pdf_group' => 'main',
+                'order' => $index + 1,
+            ])
+            ->all();
 
         $category = ProductCategory::query()->findOrFail($validated['category_id']);
         $technicalPath = $request->file('technical_excel')->getRealPath();
@@ -71,7 +84,7 @@ class ProductTechnicalImportController extends Controller
             $category,
             $request->file('technical_excel'),
             $request->file('cover_excel'),
-            $validated['icon_ids'] ?? [],
+            $iconSettings,
             $request->file('pdf_color_table')
         );
 
@@ -125,7 +138,15 @@ class ProductTechnicalImportController extends Controller
                 ->whereIn('id', $ids)
                 ->get()
                 ->each(function (Product $product) use (&$deleted) {
-                    foreach ([$product->ficha_tecnica_file, $product->pdf_graphic, $product->pdf_color_table, $product->image] as $path) {
+                    $paths = collect([
+                        $product->ficha_tecnica_file,
+                        $product->slug ? 'products/fichas/' . $product->slug . '.pdf' : null,
+                        $product->pdf_graphic,
+                        $product->pdf_color_table,
+                        $product->image,
+                    ])->filter()->unique();
+
+                    foreach ($paths as $path) {
                         if ($path && Storage::disk('public')->exists($path)) {
                             Storage::disk('public')->delete($path);
                         }
@@ -153,7 +174,17 @@ class ProductTechnicalImportController extends Controller
                     $deleted++;
                 });
 
-            $batch->update(['status' => 'cleaned']);
+            $batch->update([
+                'status' => 'cleaned',
+                'summary' => collect($batch->summary ?? [])
+                    ->map(function ($item) {
+                        unset($item['pdf']);
+
+                        return $item;
+                    })
+                    ->values()
+                    ->all(),
+            ]);
 
             return $deleted;
         });

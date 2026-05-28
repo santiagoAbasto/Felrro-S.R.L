@@ -131,30 +131,35 @@
     $iconDataUri = function ($icon) use ($product) {
         return app(\App\Services\AflamexPotenciaPdfService::class)->storageDataUri($icon->image);
     };
-    $optionalIcons = $icons->filter(function ($icon) {
-        if (($icon->pivot->pdf_group ?? null) === 'footer' || ($icon->placement ?? null) === 'footer') {
+    $iconPdfGroup = fn ($icon) => strtolower(trim((string) ($icon->pivot->pdf_group ?? 'main')));
+    $optionalIcons = $icons->filter(function ($icon) use ($iconPdfGroup) {
+        if ($iconPdfGroup($icon) === 'footer' || ($icon->placement ?? null) === 'footer') {
             return false;
         }
 
-        if (($icon->pivot->pdf_group ?? 'main') === 'optional') {
-            return true;
-        }
-
-        $slug = strtolower($icon->slug ?? '');
-
-        return str_contains($slug, 'aceite')
-            || str_contains($slug, 'hidrocarburo')
-            || str_contains($slug, 'solar');
+        return $iconPdfGroup($icon) === 'optional';
     })->values();
     $footerIcons = $icons->filter(
-        fn ($icon) => ($icon->pivot->pdf_group ?? null) === 'footer' || ($icon->placement ?? null) === 'footer'
+        fn ($icon) => $iconPdfGroup($icon) === 'footer' || ($icon->placement ?? null) === 'footer'
     )->values();
     $footerLeftIcons = $footerIcons->filter(fn ($icon) => ($icon->footer_side ?? 'left') !== 'right')->values();
     $footerRightIcons = $footerIcons->filter(fn ($icon) => ($icon->footer_side ?? 'left') === 'right')->values();
     $mainIcons = $icons
         ->reject(fn ($icon) => $optionalIcons->contains('id', $icon->id) || $footerIcons->contains('id', $icon->id))
         ->values();
-    $coverIsDense = $construction->count() >= 10 || $mainIcons->count() >= 7 || $optionalIcons->count() > 0;
+    $balancedIconCells = function ($items, int $max = 10) {
+        $visible = $items->take($max)->values();
+        $count = $visible->count();
+        $emptyCells = max(0, $max - $count);
+        $leftCount = (int) ceil($count / 2);
+
+        return $visible
+            ->take($leftCount)
+            ->concat(array_fill(0, $emptyCells, null))
+            ->concat($visible->slice($leftCount))
+            ->values();
+    };
+    $coverIsDense = $construction->count() >= 10 || $mainIcons->count() >= 8 || $optionalIcons->count() >= 6;
 @endphp
 <!doctype html>
 <html lang="es">
@@ -314,15 +319,16 @@
             margin-top: 12px;
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
         .icons--compact {
             margin-top: 8px;
         }
         .icons td {
-            width: 12.5%;
+            width: 10%;
             text-align: center;
             vertical-align: top;
-            padding: 0 4px 5px;
+            padding: 0 2px 5px;
             font-size: 6.5px;
             line-height: 1.15;
         }
@@ -362,6 +368,18 @@
             font-size: 6px;
             font-weight: 700;
             line-height: 1.05;
+        }
+        .icon-spacer {
+            display: block;
+            width: 100%;
+            height: 52px;
+            line-height: 52px;
+            font-size: 1px;
+            color: #fff;
+        }
+        .icons--compact .icon-spacer {
+            height: 44px;
+            line-height: 44px;
         }
         .options-card {
             margin-top: 0;
@@ -648,22 +666,20 @@
         @if($mainIcons->count())
             <table class="icons {{ $coverIsDense ? 'icons--compact' : '' }}">
                 <tr>
-                    @foreach($mainIcons->take(8) as $index => $icon)
-                        @if($mainIcons->count() === 7 && $index === 5)
-                            <td>&nbsp;</td>
-                        @endif
+                    @foreach($balancedIconCells($mainIcons) as $icon)
                         <td>
-                            <div class="icon-image-frame">
-                                @if($iconDataUri($icon))
-                                    <img src="{{ $iconDataUri($icon) }}" alt="{{ $icon->getName() }}">
-                                @endif
-                            </div>
-                            <span class="icon-title">{{ $icon->getName() }}</span>
+                            @if($icon)
+                                <div class="icon-image-frame">
+                                    @if($iconDataUri($icon))
+                                        <img src="{{ $iconDataUri($icon) }}" alt="{{ $icon->getName() }}">
+                                    @endif
+                                </div>
+                                <span class="icon-title">{{ $icon->getName() }}</span>
+                            @else
+                                <span class="icon-spacer">&nbsp;</span>
+                            @endif
                         </td>
                     @endforeach
-                    @for($i = $mainIcons->take(8)->count() + ($mainIcons->count() === 7 ? 1 : 0); $i < 8; $i++)
-                        <td>&nbsp;</td>
-                    @endfor
                 </tr>
             </table>
         @endif
@@ -685,16 +701,20 @@
         @endif
 
         @if($optionalIcons->count())
-            <table class="icons {{ $coverIsDense ? 'icons--compact' : '' }}" style="width: 38%; margin-top: {{ $coverIsDense ? '12px' : '18px' }};">
+            <table class="icons {{ $coverIsDense ? 'icons--compact' : '' }}" style="margin-top: {{ $coverIsDense ? '12px' : '18px' }};">
                 <tr>
-                    @foreach($optionalIcons->take(3) as $icon)
-                        <td style="width: 33.33%;">
-                            <div class="icon-image-frame">
-                                @if($iconDataUri($icon))
-                                    <img src="{{ $iconDataUri($icon) }}" alt="{{ $icon->getName() }}">
-                                @endif
-                            </div>
-                            <span class="icon-title">{{ $icon->getName() }}</span>
+                    @foreach($balancedIconCells($optionalIcons) as $icon)
+                        <td>
+                            @if($icon)
+                                <div class="icon-image-frame">
+                                    @if($iconDataUri($icon))
+                                        <img src="{{ $iconDataUri($icon) }}" alt="{{ $icon->getName() }}">
+                                    @endif
+                                </div>
+                                <span class="icon-title">{{ $icon->getName() }}</span>
+                            @else
+                                <span class="icon-spacer">&nbsp;</span>
+                            @endif
                         </td>
                     @endforeach
                 </tr>

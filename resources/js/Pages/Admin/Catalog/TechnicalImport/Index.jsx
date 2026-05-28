@@ -23,6 +23,11 @@ const getText = (value, fallback = "-") => {
     return value.es || value.en || fallback;
 };
 
+const MAIN_GROUP_LIMIT = 10;
+const OPTIONAL_GROUP_LIMIT = 10;
+const FOOTER_GROUP_LIMIT = 10;
+const ORDER_CODES = ["A", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ"];
+
 export default function Index({
     icons = [],
     categories = [],
@@ -31,12 +36,24 @@ export default function Index({
 }) {
     const { flash = {} } = usePage().props;
     const [deletingBatchId, setDeletingBatchId] = useState(null);
+    const importIcons = useMemo(
+        () => icons.filter((icon) => icon.placement !== "footer"),
+        [icons]
+    );
+    const footerIcons = useMemo(
+        () => icons.filter((icon) => icon.placement === "footer"),
+        [icons]
+    );
+    const selectableIcons = useMemo(
+        () => [...importIcons, ...footerIcons],
+        [importIcons, footerIcons]
+    );
     const { data, setData, post, processing, errors, reset } = useForm({
         category_id: categories[0]?.id ? String(categories[0].id) : "",
         technical_excel: null,
         cover_excel: null,
         pdf_color_table: null,
-        icon_ids: [],
+        icon_settings: [],
     });
 
     const selectedCategory = useMemo(
@@ -44,14 +61,76 @@ export default function Index({
         [categories, data.category_id]
     );
 
-    const toggleIcon = (id) => {
-        const stringId = String(id);
+    const iconSetting = (id) =>
+        data.icon_settings.find((item) => String(item.id) === String(id));
 
+    const groupCount = (group, nextSettings = data.icon_settings) =>
+        nextSettings.filter((item) => item.pdf_group === group).length;
+
+    const nextOrderForGroup = (group, settings = data.icon_settings) => {
+        const used = settings
+            .filter((item) => item.pdf_group === group)
+            .map((item) => Number(item.order))
+            .filter((order) => order > 0);
+
+        const nextIndex = ORDER_CODES.findIndex((_, index) => !used.includes(index + 1));
+
+        return nextIndex >= 0 ? nextIndex + 1 : 1;
+    };
+
+    const updateIconGroup = (id, group) => {
+        const current = iconSetting(id);
+        const withoutCurrent = data.icon_settings.filter((item) => String(item.id) !== String(id));
+
+        if (current?.pdf_group === group) {
+            setData("icon_settings", withoutCurrent);
+            return;
+        }
+
+        const limit = group === "footer"
+            ? FOOTER_GROUP_LIMIT
+            : group === "optional"
+                ? OPTIONAL_GROUP_LIMIT
+                : MAIN_GROUP_LIMIT;
+
+        if (groupCount(group, withoutCurrent) >= limit) {
+            alert(`Solo se permiten ${limit} iconos en ${
+                group === "footer"
+                    ? "Pie de página"
+                    : group === "optional"
+                        ? "Opcionales"
+                        : "Aplicaciones / constructividad"
+            }.`);
+            return;
+        }
+
+        const groupedByTitle = selectableIcons
+            .map((icon) => {
+                if (String(icon.id) === String(id)) {
+                    return {
+                        id: String(icon.id),
+                        pdf_group: group,
+                        order: current?.pdf_group === group ? current.order : nextOrderForGroup(group, withoutCurrent),
+                    };
+                }
+
+                const existing = withoutCurrent.find((item) => String(item.id) === String(icon.id));
+
+                return existing
+                    ? { id: String(icon.id), pdf_group: existing.pdf_group, order: existing.order }
+                    : null;
+            })
+            .filter(Boolean);
+
+        setData("icon_settings", groupedByTitle);
+    };
+
+    const updateIconOrder = (id, order) => {
         setData(
-            "icon_ids",
-            data.icon_ids.includes(stringId)
-                ? data.icon_ids.filter((current) => current !== stringId)
-                : [...data.icon_ids, stringId]
+            "icon_settings",
+            data.icon_settings.map((item) =>
+                String(item.id) === String(id) ? { ...item, order: Number(order) } : item
+            )
         );
     };
 
@@ -208,58 +287,185 @@ export default function Index({
                                     Iconos para asociar
                                 </p>
                                 <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                                    Se aplican a los productos generados en esta tanda.
+                                    Se aplican a los productos generados en esta tanda. Elegí grupo y orden; cada grupo admite hasta 10 iconos.
                                 </p>
 
+                                <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold">
+                                    <div className="rounded-2xl bg-white px-3 py-2 text-slate-500">
+                                        Aplicaciones: {groupCount("main")}/{MAIN_GROUP_LIMIT}
+                                    </div>
+                                    <div className="rounded-2xl bg-white px-3 py-2 text-slate-500">
+                                        Opcionales: {groupCount("optional")}/{OPTIONAL_GROUP_LIMIT}
+                                    </div>
+                                    <div className="rounded-2xl bg-white px-3 py-2 text-slate-500">
+                                        Pie: {groupCount("footer")}/{FOOTER_GROUP_LIMIT}
+                                    </div>
+                                </div>
+
                                 <div className="mt-4 max-h-[520px] space-y-2 overflow-auto pr-1">
-                                    {icons.length ? icons.map((icon) => {
+                                    <p className="px-1 text-xs font-bold uppercase tracking-wide text-slate-400">
+                                        Aplicaciones y opcionales
+                                    </p>
+                                    {importIcons.length ? importIcons.map((icon) => {
                                         const id = String(icon.id);
-                                        const checked = data.icon_ids.includes(id);
+                                        const setting = iconSetting(id);
 
                                         return (
-                                            <button
+                                            <div
                                                 key={icon.id}
-                                                type="button"
-                                                onClick={() => toggleIcon(id)}
-                                                className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition ${
-                                                    checked
+                                                className={`rounded-2xl border px-3 py-3 transition ${
+                                                    setting
                                                         ? "border-[#25A7CA]/40 bg-[#25A7CA]/10"
-                                                        : "border-slate-200 bg-white hover:border-[#25A7CA]/25"
+                                                        : "border-slate-200 bg-white"
                                                 }`}
                                             >
-                                                <span
-                                                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                                                        checked
-                                                            ? "border-[#25A7CA] bg-[#25A7CA] text-white"
-                                                            : "border-slate-300 bg-white"
-                                                    }`}
-                                                >
-                                                    {checked ? <Icon icon="solar:check-read-outline" width={13} /> : null}
-                                                </span>
-                                                {icon.image_url ? (
-                                                    <img
-                                                        src={icon.image_url}
-                                                        alt=""
-                                                        className="h-8 w-8 rounded-lg object-contain"
-                                                    />
-                                                ) : (
-                                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-                                                        <Icon icon="solar:gallery-outline" width={16} />
+                                                <div className="flex items-center gap-3">
+                                                    {icon.image_url ? (
+                                                        <img
+                                                            src={icon.image_url}
+                                                            alt=""
+                                                            className="h-8 w-8 rounded-lg object-contain"
+                                                        />
+                                                    ) : (
+                                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                                                            <Icon icon="solar:gallery-outline" width={16} />
+                                                        </span>
+                                                    )}
+                                                    <span className="min-w-0 text-sm font-medium text-slate-700">
+                                                        {getText(icon.name, icon.slug)}
                                                     </span>
-                                                )}
-                                                <span className="min-w-0 text-sm font-medium text-slate-700">
-                                                    {getText(icon.name, icon.slug)}
-                                                </span>
-                                            </button>
+                                                </div>
+
+                                                <div className="mt-3 grid gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateIconGroup(id, "main")}
+                                                        className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                                            setting?.pdf_group === "main"
+                                                                ? "bg-[#25A7CA] text-white"
+                                                                : "bg-white text-slate-500 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        Aplicaciones / constructividad
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateIconGroup(id, "optional")}
+                                                        className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                                            setting?.pdf_group === "optional"
+                                                                ? "bg-slate-800 text-white"
+                                                                : "bg-white text-slate-500 hover:bg-slate-50"
+                                                        }`}
+                                                    >
+                                                        Opcionales
+                                                    </button>
+                                                </div>
+
+                                                {setting ? (
+                                                    <div className="mt-3 flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-slate-500">Orden</span>
+                                                        <select
+                                                            value={setting.order || nextOrderForGroup(setting.pdf_group)}
+                                                            onChange={(event) => updateIconOrder(id, event.target.value)}
+                                                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#25A7CA]"
+                                                        >
+                                                            {ORDER_CODES.map((code, index) => (
+                                                                <option key={code} value={index + 1}>
+                                                                    {code}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <span className="text-xs text-slate-400">
+                                                            {setting.pdf_group === "optional" ? "Opcionales" : "Aplicaciones"}
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+                                            </div>
                                         );
                                     }) : (
                                         <p className="rounded-2xl border border-slate-200 bg-white px-3 py-4 text-sm text-slate-400">
                                             No hay iconos activos cargados.
                                         </p>
                                     )}
+
+                                    {footerIcons.length ? (
+                                        <div className="pt-4">
+                                            <p className="px-1 text-xs font-bold uppercase tracking-wide text-slate-400">
+                                                Pie de página
+                                            </p>
+                                            <div className="mt-2 space-y-2">
+                                                {footerIcons.map((icon) => {
+                                                    const id = String(icon.id);
+                                                    const setting = iconSetting(id);
+
+                                                    return (
+                                                        <div
+                                                            key={icon.id}
+                                                            className={`rounded-2xl border px-3 py-3 transition ${
+                                                                setting?.pdf_group === "footer"
+                                                                    ? "border-[#25A7CA]/40 bg-[#25A7CA]/10"
+                                                                    : "border-slate-200 bg-white"
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                {icon.image_url ? (
+                                                                    <img
+                                                                        src={icon.image_url}
+                                                                        alt=""
+                                                                        className="h-8 w-8 rounded-lg object-contain"
+                                                                    />
+                                                                ) : (
+                                                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                                                                        <Icon icon="solar:gallery-outline" width={16} />
+                                                                    </span>
+                                                                )}
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-medium text-slate-700">
+                                                                        {getText(icon.name, icon.slug)}
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-400">
+                                                                        {icon.footer_side === "right" ? "Lado derecho" : "Lado izquierdo"}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => updateIconGroup(id, "footer")}
+                                                                className={`mt-3 w-full rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                                                    setting?.pdf_group === "footer"
+                                                                        ? "bg-[#25A7CA] text-white"
+                                                                        : "bg-white text-slate-500 hover:bg-slate-50"
+                                                                }`}
+                                                            >
+                                                                Pie de página
+                                                            </button>
+
+                                                            {setting?.pdf_group === "footer" ? (
+                                                                <div className="mt-3 flex items-center gap-2">
+                                                                    <span className="text-xs font-semibold text-slate-500">Orden</span>
+                                                                    <select
+                                                                        value={setting.order || nextOrderForGroup("footer")}
+                                                                        onChange={(event) => updateIconOrder(id, event.target.value)}
+                                                                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#25A7CA]"
+                                                                    >
+                                                                        {ORDER_CODES.map((code, index) => (
+                                                                            <option key={code} value={index + 1}>
+                                                                                {code}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : null}
                                 </div>
-                                {errors.icon_ids ? (
-                                    <p className="mt-2 text-xs font-medium text-red-500">{errors.icon_ids}</p>
+                                {errors.icon_settings ? (
+                                    <p className="mt-2 text-xs font-medium text-red-500">{errors.icon_settings}</p>
                                 ) : null}
                             </div>
                         </div>

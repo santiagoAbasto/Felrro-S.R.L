@@ -34,8 +34,8 @@ class ProductPdfAssetController extends Controller
             ],
             'availableIcons' => ProductIcon::query()
                 ->where('is_active', true)
-                ->orderBy('order')
                 ->orderBy('name->es')
+                ->orderBy('order')
                 ->get(),
         ]);
     }
@@ -87,12 +87,20 @@ class ProductPdfAssetController extends Controller
         }
 
         $sync = [];
+        $icons = ProductIcon::query()
+            ->whereIn('id', collect($validated['icon_settings'] ?? [])->pluck('id')->filter()->all())
+            ->get()
+            ->keyBy('id');
 
         foreach ($validated['icon_settings'] ?? [] as $index => $item) {
+            $icon = $icons->get((int) $item['id']);
+            $group = strtolower(trim((string) ($item['pdf_group'] ?? 'main')));
+            $group = in_array($group, ['main', 'optional', 'footer'], true) ? $group : 'main';
+
             $sync[(int) $item['id']] = [
                 'order' => $item['order'] ?? $index + 1,
                 'show_in_pdf' => (bool) ($item['show_in_pdf'] ?? false),
-                'pdf_group' => $item['pdf_group'] ?? 'main',
+                'pdf_group' => $icon?->placement === 'footer' ? 'footer' : $group,
             ];
         }
 

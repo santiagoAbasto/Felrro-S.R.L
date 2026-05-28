@@ -11,6 +11,7 @@ import { Icon } from "@iconify/react";
 import { route } from "ziggy-js";
 
 const iconName = (icon) => icon.name?.es || icon.name?.en || icon.slug;
+const ORDER_CODES = ["A", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ"];
 
 export default function Edit({ product, availableIcons = [] }) {
     const { flash = {} } = usePage().props;
@@ -165,20 +166,23 @@ export default function Edit({ product, availableIcons = [] }) {
                                                         onChange={(event) => updateIcon(icon.id, "pdf_group", event.target.value)}
                                                         className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#25A7CA]"
                                                     >
-                                                        <option value="main">Principal</option>
-                                                        <option value="optional">Opcional</option>
+                                                        <option value="main">Aplicaciones / constructividad</option>
+                                                        <option value="optional">Opcionales</option>
                                                         <option value="footer">Pie</option>
                                                     </select>
                                                 </td>
                                                 <td className="px-4 py-4">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        max="999"
+                                                    <select
                                                         value={setting.order ?? ""}
                                                         onChange={(event) => updateIcon(icon.id, "order", event.target.value)}
-                                                        className="w-24 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#25A7CA]"
-                                                    />
+                                                        className="w-24 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#25A7CA]"
+                                                    >
+                                                        {ORDER_CODES.map((code, index) => (
+                                                            <option key={code} value={index + 1}>
+                                                                {code}
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                 </td>
                                             </tr>
                                         );
