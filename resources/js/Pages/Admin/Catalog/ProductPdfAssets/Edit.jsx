@@ -99,11 +99,12 @@ export default function Edit({ product, availableIcons = [] }) {
                                     label="Tabla de color"
                                     value={data.pdf_color_table}
                                     onChange={(file) => setData("pdf_color_table", file)}
-                                    accept="image/png,image/jpeg,image/webp"
+                                    accept="image/png,image/jpeg,image/webp,application/pdf"
                                     currentUrl={product.pdf_color_table_url}
                                     currentLabel={product.pdf_color_table_url ? "Tabla actual cargada" : null}
                                     error={errors.pdf_color_table}
-                                    maxSizeMB={5}
+                                    hint="Podés subir una imagen o un PDF exportado desde Excel; si subís PDF se toma solo la primera página como imagen."
+                                    maxSizeMB={10}
                                     optional
                                     buttonLabel="Seleccionar tabla"
                                 />

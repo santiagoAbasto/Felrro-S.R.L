@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductIcon;
 use App\Services\AflamexPotenciaPdfService;
+use App\Services\PdfColorTableService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -40,11 +41,11 @@ class ProductPdfAssetController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product, AflamexPotenciaPdfService $pdfService)
+    public function update(Request $request, Product $product, AflamexPotenciaPdfService $pdfService, PdfColorTableService $colorTableService)
     {
         $validated = $request->validate([
             'pdf_graphic' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'pdf_color_table' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'pdf_color_table' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'remove_pdf_graphic' => ['nullable', 'boolean'],
             'remove_pdf_color_table' => ['nullable', 'boolean'],
             'icon_settings' => ['nullable', 'array'],
@@ -76,14 +77,7 @@ class ProductPdfAssetController extends Controller
         }
 
         if ($request->hasFile('pdf_color_table') && $request->file('pdf_color_table')->isValid()) {
-            if ($product->pdf_color_table) {
-                Storage::disk('public')->delete($product->pdf_color_table);
-            }
-
-            $product->update([
-                'pdf_color_table' => $request->file('pdf_color_table')
-                    ->storeAs('products/pdf-color-tables', $product->slug . '.' . $request->file('pdf_color_table')->extension(), 'public'),
-            ]);
+            $colorTableService->store($product, $request->file('pdf_color_table'));
         }
 
         $sync = [];

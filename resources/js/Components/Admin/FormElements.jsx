@@ -317,7 +317,9 @@ export function AdminFileField({
             return undefined;
         }
 
-        if (kind === "image") {
+        const nextKind = value.type === "application/pdf" ? "document" : kind;
+
+        if (nextKind === "image") {
             const reader = new FileReader();
 
             reader.onload = () => {
@@ -339,6 +341,7 @@ export function AdminFileField({
         return () => URL.revokeObjectURL(nextObjectUrl);
     }, [value, kind]);
 
+    const effectiveKind = value instanceof File && value.type === "application/pdf" ? "document" : kind;
     const effectivePreview = previewDataUrl || objectUrl || previewUrl || currentUrl;
 
     const handleChange = (event) => {
@@ -376,7 +379,7 @@ export function AdminFileField({
         >
             <div className="space-y-4 rounded-[24px] border border-dashed border-slate-300 bg-slate-50/80 p-4">
                 {effectivePreview ? (
-                    <FilePreview kind={kind} url={effectivePreview} />
+                    <FilePreview kind={effectiveKind} url={effectivePreview} />
                 ) : null}
 
                 {currentLabel && !value ? (

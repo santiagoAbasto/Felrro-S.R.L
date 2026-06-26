@@ -54,7 +54,7 @@ class ProductTechnicalImportController extends Controller
             'category_id' => ['required', 'integer', 'exists:product_categories,id'],
             'technical_excel' => ['required', 'file', 'mimes:xlsx', 'max:10240'],
             'cover_excel' => ['nullable', 'file', 'mimes:xlsx', 'max:10240'],
-            'pdf_color_table' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'pdf_color_table' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'icon_settings' => ['nullable', 'array'],
             'icon_settings.*.id' => ['required', 'integer', 'exists:product_icons,id'],
             'icon_settings.*.pdf_group' => ['required', 'in:main,optional,footer'],

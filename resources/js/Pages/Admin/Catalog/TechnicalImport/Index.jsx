@@ -272,13 +272,13 @@ export default function Index({
                                     label="Tabla de color para PDF"
                                     value={data.pdf_color_table}
                                     onChange={(file) => setData("pdf_color_table", file)}
-                                    accept="image/png,image/jpeg,image/webp"
+                                    accept="image/png,image/jpeg,image/webp,application/pdf"
                                     error={errors.pdf_color_table}
-                                    hint="Opcional. Imagen que se adjunta a la ficha PDF generada."
+                                    hint="Opcional. Podés subir imagen o PDF exportado desde Excel; si subís PDF se toma solo la primera página como imagen."
                                     optional
-                                    maxSizeMB={5}
+                                    maxSizeMB={10}
                                     kind="image"
-                                    buttonLabel="Seleccionar imagen"
+                                    buttonLabel="Seleccionar imagen o PDF"
                                 />
                             </div>
 

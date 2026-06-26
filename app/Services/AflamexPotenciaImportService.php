@@ -27,7 +27,10 @@ class AflamexPotenciaImportService
         'PVC VDF' => ['start' => 56, 'end' => 65],
     ];
 
-    public function __construct(private AflamexPotenciaPdfService $pdfService)
+    public function __construct(
+        private AflamexPotenciaPdfService $pdfService,
+        private PdfColorTableService $colorTableService,
+    )
     {
     }
 
@@ -251,17 +254,7 @@ class AflamexPotenciaImportService
 
     private function syncPdfColorTable(Product $product, UploadedFile $file): void
     {
-        if ($product->pdf_color_table && Storage::disk('public')->exists($product->pdf_color_table)) {
-            Storage::disk('public')->delete($product->pdf_color_table);
-        }
-
-        $product->update([
-            'pdf_color_table' => $file->storeAs(
-                'products/pdf-color-tables',
-                $product->slug . '.' . strtolower($file->extension()),
-                'public'
-            ),
-        ]);
+        $this->colorTableService->store($product, $file);
     }
 
     private function syncTechnicalData(Product $product, Worksheet $sheet, ProductImportBatch $batch): array
