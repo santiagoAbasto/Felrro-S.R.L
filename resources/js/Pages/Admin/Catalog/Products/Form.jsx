@@ -273,7 +273,7 @@ export default function ProductForm({
 
             <AdminSectionCard
                 title="Ficha técnica"
-                description="Podés cargar un PDF para que el visitante descargue la ficha del producto."
+                description="Podés cargar la ficha y definir la tabla de color propia de este producto para el PDF generado."
             >
                 <AdminFileField
                     label="Archivo PDF"
@@ -289,6 +289,38 @@ export default function ProductForm({
                     optional
                     buttonLabel="Seleccionar PDF"
                 />
+
+                <AdminFileField
+                    label="Tabla de color para PDF"
+                    value={data.pdf_color_table}
+                    onChange={(file) => {
+                        setData({
+                            ...data,
+                            pdf_color_table: file,
+                            remove_pdf_color_table: false,
+                        });
+                    }}
+                    accept="image/png,image/jpeg,image/webp,application/pdf"
+                    maxSizeMB={10}
+                    currentUrl={data.existing_pdf_color_table ?? null}
+                    currentLabel={data.existing_pdf_color_table ? "Tabla de color actual cargada" : null}
+                    hint="Opcional. Podés subir imagen o PDF exportado desde Excel; si subís PDF se toma solo la primera página como imagen."
+                    error={errors.pdf_color_table}
+                    kind="image"
+                    optional
+                    buttonLabel="Seleccionar tabla"
+                />
+
+                {data.existing_pdf_color_table ? (
+                    <AdminToggle
+                        label="Quitar tabla de color actual"
+                        hint="Si la quitás, el PDF generado ya no usará esta tabla de color."
+                        checked={data.remove_pdf_color_table}
+                        onChange={(value) => setData("remove_pdf_color_table", value)}
+                        activeText="Se quitará"
+                        inactiveText="Conservar"
+                    />
+                ) : null}
             </AdminSectionCard>
 
             <BlockRepeater

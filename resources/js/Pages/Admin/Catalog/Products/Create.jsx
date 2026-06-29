@@ -24,6 +24,8 @@ export default function Create({ categories }) {
 
         /* ================= FICHA TÉCNICA ================= */
         ficha_tecnica_file: null,
+        pdf_color_table: null,
+        remove_pdf_color_table: false,
 
         /* ================= FLAGS ================= */
         featured: false,

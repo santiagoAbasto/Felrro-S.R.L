@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Services\AflamexPotenciaPdfService;
+use App\Services\PdfColorTableService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -51,11 +52,11 @@ class ProductController extends Controller
     /* =======================================================
    STORE - ENTERPRISE SAFE SLUG VERSION
 ======================================================= */
-    public function store(Request $request)
+    public function store(Request $request, PdfColorTableService $colorTableService)
     {
         $validated = $this->validateProduct($request);
 
-        DB::transaction(function () use ($request, &$validated) {
+        DB::transaction(function () use ($request, &$validated, $colorTableService) {
 
             $validated['featured']  = $request->boolean('featured');
             $validated['is_active'] = $request->boolean('is_active');
@@ -100,7 +101,13 @@ class ProductController extends Controller
                 $validated['featured_order'] = null;
             }
 
+            unset($validated['pdf_color_table'], $validated['remove_pdf_color_table']);
+
             $product = Product::create($validated);
+
+            if ($request->hasFile('pdf_color_table') && $request->file('pdf_color_table')->isValid()) {
+                $colorTableService->store($product, $request->file('pdf_color_table'));
+            }
 
             /*
         |--------------------------------------------------------------------------
@@ -190,12 +197,12 @@ class ProductController extends Controller
     /* =======================================================
    UPDATE
 ======================================================= */
-    public function update(Request $request, Product $product, AflamexPotenciaPdfService $pdfService)
+    public function update(Request $request, Product $product, AflamexPotenciaPdfService $pdfService, PdfColorTableService $colorTableService)
     {
         $validated = $this->validateProduct($request, $product);
         $uploadedManualFicha = false;
 
-        DB::transaction(function () use ($request, $product, &$validated, &$uploadedManualFicha) {
+        DB::transaction(function () use ($request, $product, &$validated, &$uploadedManualFicha, $colorTableService) {
 
             $validated['featured']  = $request->boolean('featured');
             $validated['is_active'] = $request->boolean('is_active');
@@ -272,7 +279,18 @@ class ProductController extends Controller
                 $validated['featured_order'] = null;
             }
 
+            unset($validated['pdf_color_table'], $validated['remove_pdf_color_table']);
+
             $product->update($validated);
+
+            if ($request->boolean('remove_pdf_color_table') && $product->pdf_color_table) {
+                Storage::disk('public')->delete($product->pdf_color_table);
+                $product->update(['pdf_color_table' => null]);
+            }
+
+            if ($request->hasFile('pdf_color_table') && $request->file('pdf_color_table')->isValid()) {
+                $colorTableService->store($product, $request->file('pdf_color_table'));
+            }
 
             /*
         |--------------------------------------------------------------------------
@@ -480,6 +498,8 @@ class ProductController extends Controller
             ],
 
             'ficha_tecnica_file' => 'nullable|file|mimes:pdf|max:5120',
+            'pdf_color_table' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
+            'remove_pdf_color_table' => 'nullable|boolean',
 
             'featured' => 'nullable|boolean',
             'featured_order' => 'nullable|string|max:10',
