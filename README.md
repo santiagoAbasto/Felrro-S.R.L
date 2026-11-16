@@ -1,644 +1,254 @@
+<div align="center">
+<img src="docs/readme/banner.svg" alt="Felrro — Sitio corporativo bilingüe, catálogo eléctrico industrial y cotizaciones" width="100%">
+<br/>
 
-# Felrro — Corporate Website & CMS Platform
+**Sitio corporativo bilingüe y CMS para un catálogo de productos eléctricos industriales.**
 
-Enterprise corporate website and dynamic CMS built for **Felrro S.R.L.**, a company specialized in the manufacturing of special electrical conductors.
+<img alt="Versión 1.1.8" src="https://img.shields.io/badge/versión-1.1.8-25a7ca?style=for-the-badge&labelColor=101010">
+<img alt="Laravel 12" src="https://img.shields.io/badge/Laravel-12-ff2d20?style=flat-square&logo=laravel&logoColor=white">
+<img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=flat-square&logo=php&logoColor=white">
+<img alt="React 18" src="https://img.shields.io/badge/React-18-149eca?style=flat-square&logo=react&logoColor=white">
+<img alt="Inertia.js 2" src="https://img.shields.io/badge/Inertia.js-2-9553e9?style=flat-square">
+<img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white">
+<img alt="Vite 7" src="https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white">
+</div>
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 📑 Contenido
+
+[El problema](#-el-problema) · [La solución](#-la-solución) · [Funcionalidades](#-funcionalidades) · [Arquitectura](#-arquitectura) · [Flujos de trabajo](#-flujos-de-trabajo) · [Modelo de datos](#-modelo-de-datos) · [Criterios y decisiones](#-criterios-y-decisiones) · [Stack](#-stack) · [Estructura](#-estructura-del-repo) · [Puesta en marcha](#-puesta-en-marcha) · [Pruebas y calidad](#-pruebas-y-calidad) · [Despliegue](#-despliegue) · [Estado y pendientes](#-estado-y-pendientes) · [Licencia y autoría](#-licencia-y-autoría)
 
-The platform was developed using a **modern Laravel architecture** with a fully administrable CMS, multilingual content management, and pixel‑perfect frontend implementation based on Figma designs.
+<img src="docs/readme/divider.svg" alt="" width="100%">
 
-This repository contains both:
+## 🧩 El problema
 
-- The **public corporate website**
-- The **administration panel (CMS)**
+La empresa vende productos eléctricos industriales con fichas técnicas, aplicaciones, certificados y líneas de producto que cambian con frecuencia. Publicar o corregir un dato técnico exigía tocar el código, y las cotizaciones y consultas llegaban sin un flujo ordenado ni en los dos idiomas que usan sus clientes.
 
-The system allows administrators to manage all corporate content without modifying the codebase.
+## 💡 La solución
 
----
-
-# Project Overview
-
-Felrro is a **corporate content management platform** designed to provide:
-
-- Product catalog management
-- Industrial sector presentation
-- Corporate blog/news system
-- Certification and quality documentation
-- Human resources recruitment module
-- Client showcase
-- Contact system with message storage
-- Downloadable technical documentation
-
-All sections are editable through a **React-based admin panel**.
-
-The frontend public website is built using **Blade templates optimized for performance, SEO and maintainability**.
-
----
-
-# Architecture
-
-The project follows a **hybrid architecture** separating public content from administrative operations.
-
-Laravel 12
-
-│
-
-├ Public Website
-
-│ └ Blade templates
-
-│
-
-├ Admin Panel
-
-│ └ Inertia.js + React
-
-│
-
-├ Database
-
-│ └ MySQL
-
-│
-
-└ File Storage
-
-└ storage/app/public
-
----
-
-## Frontend (Public Website)
-
-Technologies:
-
-- Blade
-- Vanilla JavaScript (minimal usage)
-- Custom CSS
-- Responsive layout
-- SEO optimized markup
-
----
-
-## Admin Panel
-
-Technologies:
-
-- React
-- Inertia.js
-- Ziggy for Laravel route usage in React
-- FormData uploads
-- Modular CMS forms
-
-The admin panel allows administrators to manage all website sections.
-
----
-
-# Technology Stack
-
-## Backend
-
-- Laravel 12
-- PHP 8+
-- Eloquent ORM
-- Laravel Storage
-- Database Transactions
-- SoftDeletes
-
-## Frontend
-
-Public website:
-
-- Blade
-- Custom CSS
-- Responsive design
-
-Admin panel:
-
-- React
-- Inertia.js
-- Ziggy
-
-## Database
-
-- MySQL
-
-## File Management
-
-All uploaded files are stored using Laravel Storage:
-
-storage/app/public
-
-Public access is provided through:
-
-php artisan storage:link
-
----
-
-# Multilingual System
-
-The CMS implements a **JSON‑based multilingual architecture**.
-
-Editable content fields follow this structure:
-
-{
-  "es": "Texto en español",
-  "en": "English text"
-}
-
-Language resolution uses:
-
-- session locale
-- automatic fallback to Spanish
-
-Model helpers simplify usage:
-
-$product->getName()
-
-$product->getDescription()
-
-$pageSection->getTitle()
-
-This architecture avoids external translation services and ensures full CMS control.
-
----
-
-# CMS Architecture
-
-The CMS is built using a **Page + PageSection architecture**.
-
-This allows pages to be dynamically composed from multiple content blocks.
-
-Example:
-
-Page: Home
-
-Sections:
-
-- hero
-- about_preview
-- featured_products
-
-Example structure:
-
-Page
-
-└ PageSection
-
-├ hero
-
-├ about_preview
-
-├ contact_banner
-
-└ contact_info
-
-This modular design allows flexible page composition and easier future expansion.
-
----
-
-# Modules
-
-## Hero CMS
-
-Dynamic homepage hero slider.
-
-Features:
-
-- multiple images
-- multilingual titles
-- optional button
-- configurable order
-- activation toggle
-
----
-
-## About Page
-
-Structured into modular sections:
-
-- about_main
-- about_metrics
-- about_values
-- about_video
-
-Supports:
-
-- institutional images
-- local video uploads
-- YouTube/Vimeo embeds
-
----
-
-## Products
-
-Industrial product catalog system.
-
-Features:
-
-- product categories
-- image gallery
-- downloadable technical sheet
-- technical specifications
-- industrial applications
-- automatic slug generation
-- featured products
-- SoftDeletes
-
-Public routes:
-
-/productos
-
-/producto/{slug}
-
----
-
-## Sectors
-
-Industrial sectors where products are applied.
-
-Features:
-
-- multilingual descriptions
-- sector images
-- enterprise ordering system
-
-Public route:
-
-/sectores
-
----
-
-## Quality
-
-Corporate quality policies and certifications.
-
-Features:
-
-- quality policy content
-- certification documents
-- downloadable files
-
-Public route:
-
-/calidad
-
----
-
-## Certificates
-
-Certification document management.
-
-Features:
-
-- multilingual name
-- logo image
-- downloadable PDF
-- enterprise ordering
-
----
-
-## Blog / News
-
-Corporate news and articles.
-
-Features:
-
-- automatic slug generation
-- featured image
-- excerpt
-- full content
-- publish date
-- featured posts
-
-Public routes:
-
-/novedades
-
-/novedades/{slug}
-
----
-
-## Clients
-
-Client logo showcase module.
-
-Features:
-
-- logo upload
-- ordering system
-- activation toggle
-
-Public route:
-
-/clientes
-
----
-
-## Human Resources
-
-Job application management system.
-
-Features:
-
-- job positions
-- job sectors
-- CV upload
-- application form
-
-Public route:
-
-/rrhh
-
----
-
-## Contact System
-
-Contact page with CMS‑managed content.
-
-Features:
-
-- banner section
-- company contact information
-- Google Maps embed
-- message storage in database
-
-Public route:
-
-/contacto
-
----
-
-# Database Structure
-
-Main tables:
-
-users
-
-pages
-
-page_sections
-
-product_categories
-
-products
-
-product_images
-
-product_specifications
-
-product_applications
-
-sectors
-
-posts
-
-downloads
-
-certificates
-
-clients
-
-job_positions
-
-job_sectors
-
-job_applications
-
-contact_messages
-
-site_settings
-
-quotations
-
-quotation_items
-
----
-
-# Enterprise Ordering System
-
-Several modules implement an **alphabetical ordering system** similar to Excel columns.
-
-Example:
-
-A
-
-AA
-
-AB
-
-AC
-
-Used in:
-
-- products
-- sectors
-- certificates
-
-This allows manual ordering without numeric limits.
-
----
-
-# File Storage Structure
-
-Files are stored in:
-
-storage/app/public
-
-Directory structure:
-
-products/
-
-clients/
-
-posts/
-
-sectors/
-
-pages/
-
-certificates/
-
-downloads/
-
-Access is exposed through:
-
-/storage/
-
----
-
-# Installation
-
-Clone repository
-
-git clone https://github.com/your-username/felrro.git
-
-Install backend dependencies
-
+**Felrro** es una aplicación Laravel con dos caras:
+
+- **Sitio público** en español e inglés, renderizado en servidor con Blade: catálogo por categorías y sectores, fichas de producto, novedades, certificados, descargas y páginas institucionales. Un visitante arma una cotización en un carrito de sesión y la envía.
+- **Panel administrativo** con React e Inertia para el equipo administrador: CMS, catálogo, importación de fichas técnicas desde hojas de cálculo, cotizaciones, contactos, newsletter, certificados y recursos humanos.
+
+Los roles son `user`, `editor` y `admin`; el panel exige el rol `admin`.
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## ✨ Funcionalidades
+
+**Sitio público** (rol: visitante)
+- Sitio corporativo bilingüe con cambio de idioma y respaldo al español cuando falta una traducción.
+- Catálogo de productos por categorías y sectores, con buscador, galerías, especificaciones, aplicaciones e iconografía técnica.
+- Carrito de cotización en sesión; las solicitudes se guardan y se envían por correo.
+- Contacto, newsletter con baja mediante token y postulaciones laborales.
+
+**Panel administrativo** (rol: admin)
+- CMS de páginas, secciones y multimedia, con metadatos SEO y Open Graph por página.
+- Importación de información técnica desde hojas de cálculo para líneas de producto específicas.
+- Generación de fichas técnicas en PDF y administración de los recursos gráficos asociados.
+- Gestión de novedades, clientes, certificados, descargas y videos.
+- Mensajes de contacto con estado leído/no leído y envío de newsletter.
+- Recursos humanos: puestos, sectores y postulaciones; los CV y cartas se guardan en almacenamiento privado.
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🏗️ Arquitectura
+
+Monolito modular sobre Laravel. El sitio público entrega HTML desde el servidor con Blade; el panel conserva controladores y reglas en Laravel y usa Inertia para conectarlos con páginas React. Eloquent gestiona la persistencia, y la importación técnica, la generación de PDF y el procesamiento de imágenes viven en servicios de aplicación.
+
+Los archivos públicos se guardan en `storage/app/public`; los documentos de postulantes usan un disco privado.
+
+<img src="docs/readme/flujo.svg" alt="Cómo viaja una petición: visitante explora y cotiza, Blade o Inertia responden, Laravel usa servicios de PDF y correo, la base guarda catálogo, CMS y solicitudes" width="100%">
+
+```mermaid
+flowchart LR
+    V["Visitante"] --> B["Sitio público (Blade)"]
+    E["Equipo (editor / admin)"] --> P["Panel (React + Inertia)"]
+    B --> C["Controladores Web"]
+    P --> A["Controladores Admin"]
+    C --> S["Servicios (importación, PDF, imágenes)"]
+    A --> S
+    C --> M["Middleware (CSP, límites, CSRF)"]
+    A --> M
+    S --> EL["Eloquent"]
+    EL --> DB[("MySQL o SQLite")]
+    S --> PUB["Storage público"]
+    S --> PRV["Storage privado (postulaciones)"]
+    S --> ML["Correo"]
+```
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🔄 Flujos de trabajo
+
+**Cotización desde el sitio público**
+
+```mermaid
+sequenceDiagram
+    actor Visitante
+    participant Web as Sitio público
+    participant Carrito as Carrito en sesión
+    participant Laravel as Laravel
+    participant DB as Base de datos
+    participant Correo as Correo
+    Visitante->>Web: Agrega productos y variantes
+    Web->>Carrito: Guarda la selección en sesión
+    Visitante->>Web: Envía la solicitud de cotización
+    Web->>Laravel: POST cotización (con límite de frecuencia)
+    Laravel->>DB: Crea Quotation y QuotationItem con snapshot de la variante
+    Laravel->>Correo: Notifica a los destinatarios configurados
+```
+
+**Importación de ficha técnica**
+
+```mermaid
+sequenceDiagram
+    actor Editor
+    participant Panel as Panel
+    participant Imp as Servicio de importación
+    participant DB as Base de datos
+    Editor->>Panel: Sube la hoja de cálculo de la línea
+    Panel->>Imp: Valida tipo y tamaño
+    Imp->>DB: Actualiza secciones y filas técnicas en transacción
+    DB-->>Panel: Producto con datos técnicos actualizados
+```
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🗃️ Modelo de datos
+
+Eloquent con migraciones relacionales (56 migraciones y 28 modelos en el repositorio). Los campos traducibles se guardan como JSON con claves de idioma.
+
+```mermaid
+erDiagram
+    PAGE ||--o{ PAGE_SECTION : contiene
+    PAGE_SECTION ||--o{ PAGE_SECTION_IMAGE : incluye
+    PRODUCT_CATEGORY ||--o{ PRODUCT : agrupa
+    PRODUCT ||--o{ PRODUCT_IMAGE : muestra
+    PRODUCT ||--o{ PRODUCT_SPECIFICATION : tiene
+    PRODUCT ||--o{ PRODUCT_APPLICATION : aplica
+    PRODUCT }o--o{ SECTOR : relaciona
+    QUOTATION ||--o{ QUOTATION_ITEM : contiene
+    JOB_SECTOR ||--o{ JOB_POSITION : agrupa
+    JOB_POSITION ||--o{ JOB_APPLICATION : recibe
+    PRODUCT {
+        bigint id PK
+        string slug
+    }
+    QUOTATION {
+        bigint id PK
+    }
+    JOB_APPLICATION {
+        bigint id PK
+    }
+```
+
+`Product` usa borrado lógico. Las importaciones técnicas y las operaciones que combinan base de datos y archivos usan transacciones.
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🧭 Criterios y decisiones
+
+- **Contenido traducible en el mismo registro.** Español e inglés conviven en una sola entidad, y el respaldo al español se resuelve en helpers del modelo.
+- **Documentos privados.** CV y cartas nunca quedan en el disco público; se descargan solo por rutas administrativas protegidas.
+- **Snapshot de la variante cotizada.** Cada `QuotationItem` conserva el estado de la variante al momento de la solicitud.
+- **Lógica pesada fuera de los controladores.** Importadores y generadores de PDF son servicios; los controladores solo orquestan.
+
+| Decisión | Por qué |
+| --- | --- |
+| Blade para lo público y React/Inertia para el panel | HTML servido desde el servidor para el sitio, y una experiencia interactiva para el equipo, sin una API separada. |
+| CMS con página, sección y multimedia como entidades | Cada bloque se ordena y edita sin depender de una página rígida. |
+| Borrado lógico en productos | Permite recuperar un producto retirado del catálogo público. |
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🧱 Stack
+
+| Capa | Tecnología | Versión |
+| --- | --- | --- |
+| Lenguaje | PHP | ^8.2 |
+| Backend | Laravel framework | ^12.0 (lock 12.59.0) |
+| Integración panel | inertiajs/inertia-laravel | 2.0.24 |
+| API y sesiones | Laravel Sanctum | 4.3.2 |
+| Frontend | React | 18.3.1 |
+| Frontend | @inertiajs/react | 2.3.23 |
+| Estilos | Tailwind CSS | 4.3.0 |
+| Build | Vite | 7.3.6 |
+| Pruebas | PHPUnit | según `composer.json` |
+| Base de datos | MySQL o SQLite según `DB_CONNECTION` | — |
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🗂️ Estructura del repo
+
+```text
+app/Http/Controllers/         sitio público y panel
+app/Services/                 importación técnica, PDF e imágenes
+app/Models/                   entidades Eloquent (28)
+database/migrations/          esquema relacional (56)
+resources/views/              Blade público
+resources/js/                 panel React e Inertia
+routes/web.php, admin.php     rutas públicas y del panel
+routes/auth.php               autenticación
+docs/                         guía de carga masiva de productos (PDF)
+tests/                        pruebas de autenticación y de funcionalidad
+```
+
+<img src="docs/readme/divider.svg" alt="" width="100%">
+
+## 🚀 Puesta en marcha
+
+Requisitos: PHP 8.2+, Composer, Node.js y npm compatibles con el lockfile, y MySQL si se usa esa conexión.
+
+```bash
 composer install
-
-Install frontend dependencies
-
-npm install
-
-Copy environment configuration
-
-cp .env.example .env
-
-Configure database
-
-DB_CONNECTION=mysql
-
-DB_DATABASE=felrro
-
-DB_USERNAME=root
-
-DB_PASSWORD=
-
-Run migrations
-
+npm ci
+cp .env.example .env              # configurar base, correo y variables localmente
+php artisan key:generate
 php artisan migrate
-
-Create storage symlink
-
+php artisan db:seed               # contenido inicial, opcional
 php artisan storage:link
+composer run dev                  # servidor, cola, logs y Vite en paralelo
+```
 
-Start frontend build
+Variables relevantes (por nombre): `DB_*`, `MAIL_*`, `QUEUE_CONNECTION`, `APP_URL`. No reutilizar credenciales de producción en local.
 
-npm run dev
+<img src="docs/readme/divider.svg" alt="" width="100%">
 
-Run server
+## 🧪 Pruebas y calidad
 
-php artisan serve
+Pruebas de autenticación: inicio y cierre de sesión, registro, verificación de correo, confirmación y actualización de contraseña, y recuperación. Usan SQLite en memoria.
 
----
+```bash
+composer test
+vendor/bin/pint --test
+npm run build
+```
 
-# Environment Variables
+La cifra registrada en la versión anterior de este README fue de 18 pruebas y 38 aserciones aprobadas; no se volvió a ejecutar para este cambio. No hay pruebas E2E, de carga ni cobertura automatizada de los módulos de negocio.
 
-Important configuration variables:
+<img src="docs/readme/divider.svg" alt="" width="100%">
 
-APP_NAME=Felrro
+## 🚢 Despliegue
 
-APP_ENV=local
+No documentado en el repositorio. No hay infraestructura como código, receta de despliegue, Dockerfile ni pipeline de CI/CD. Proveedor, servidor web y estrategia de copias de seguridad no se pueden verificar desde el código.
 
-APP_DEBUG=true
+<img src="docs/readme/divider.svg" alt="" width="100%">
 
-DB_CONNECTION=mysql
+## 📌 Estado y pendientes
 
-DB_DATABASE=felrro
+- **Estado:** aplicación funcional con sitio bilingüe, CMS, catálogo, cotizaciones, newsletter, RR. HH. y panel.
+- **Último commit:** 2026-06-29, `VERSION 1.1.8`, en el historial local.
+- **Producción:** no verificado.
+- **Pendientes:** pruebas para los módulos de negocio; documentar el despliegue.
 
-DB_USERNAME=root
+<img src="docs/readme/divider.svg" alt="" width="100%">
 
-DB_PASSWORD=
+## 📄 Licencia y autoría
 
-FILESYSTEM_DISK=public
+Desarrollado por el **Ing. Santiago Abasto**.
 
----
 
-# Routes
-
-## Public
-
-/
-
-/nosotros
-
-/productos
-
-/producto/{slug}
-
-/sectores
-
-/calidad
-
-/novedades
-
-/novedades/{slug}
-
-/clientes
-
-/rrhh
-
-/contacto
-
----
-
-## Admin
-
-/admin/login
-
-/admin/dashboard
-
-/admin/products
-
-/admin/sectors
-
-/admin/posts
-
-/admin/certificates
-
-/admin/clients
-
-/admin/hr
-
-/admin/contact
-
----
-
-# Security
-
-Implemented practices:
-
-- strict backend validation
-- database transactions
-- safe file replacement
-- physical file deletion
-- SoftDeletes support
-- protected admin routes
-
----
-
-# Design
-
-Frontend layout was implemented following **pixel‑perfect specifications from Figma designs**.
-
-Design characteristics:
-
-- centered container (~1240px)
-- Montserrat typography
-- corporate color palette
-- responsive grid system
-
----
-
-# Project Status
-
-Current status:
-
-Production Ready
-
-Modules implemented:
-
-- Hero CMS
-- About Page
-- Products
-- Sectors
-- Quality
-- Certificates
-- Blog / News
-- Clients
-- Human Resources
-- Contact System
-
-The architecture is stable and prepared for future module expansion.
-
----
-
-# Author
-
-Santiago Alfredo Abasto Ortega
-
-Systems Engineering
-
----
-
-# License
-
-Developed for corporate use by **Felrro S.R.L.**
+Repositorio sin archivo de licencia. El código y el contenido son propiedad del cliente, Felrro, salvo que se acuerde otra cosa.
