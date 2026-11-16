@@ -15,17 +15,17 @@
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 📑 Contenido
+## <img src="docs/readme/ic-indice.svg" width="24" height="24" alt=""> Contenido
 
 [El problema](#-el-problema) · [La solución](#-la-solución) · [Funcionalidades](#-funcionalidades) · [Arquitectura](#-arquitectura) · [Flujos de trabajo](#-flujos-de-trabajo) · [Modelo de datos](#-modelo-de-datos) · [Criterios y decisiones](#-criterios-y-decisiones) · [Stack](#-stack) · [Estructura](#-estructura-del-repo) · [Puesta en marcha](#-puesta-en-marcha) · [Pruebas y calidad](#-pruebas-y-calidad) · [Despliegue](#-despliegue) · [Estado y pendientes](#-estado-y-pendientes) · [Licencia y autoría](#-licencia-y-autoría)
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🧩 El problema
+## <img src="docs/readme/ic-problema.svg" width="24" height="24" alt=""> El problema
 
 La empresa vende productos eléctricos industriales con fichas técnicas, aplicaciones, certificados y líneas de producto que cambian con frecuencia. Publicar o corregir un dato técnico exigía tocar el código, y las cotizaciones y consultas llegaban sin un flujo ordenado ni en los dos idiomas que usan sus clientes.
 
-## 💡 La solución
+## <img src="docs/readme/ic-solucion.svg" width="24" height="24" alt=""> La solución
 
 **Felrro** es una aplicación Laravel con dos caras:
 
@@ -36,7 +36,7 @@ Los roles son `user`, `editor` y `admin`; el panel exige el rol `admin`.
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## ✨ Funcionalidades
+## <img src="docs/readme/ic-funcionalidades.svg" width="24" height="24" alt=""> Funcionalidades
 
 **Sitio público** (rol: visitante)
 - Sitio corporativo bilingüe con cambio de idioma y respaldo al español cuando falta una traducción.
@@ -54,7 +54,7 @@ Los roles son `user`, `editor` y `admin`; el panel exige el rol `admin`.
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🏗️ Arquitectura
+## <img src="docs/readme/ic-arquitectura.svg" width="24" height="24" alt=""> Arquitectura
 
 Monolito modular sobre Laravel. El sitio público entrega HTML desde el servidor con Blade; el panel conserva controladores y reglas en Laravel y usa Inertia para conectarlos con páginas React. Eloquent gestiona la persistencia, y la importación técnica, la generación de PDF y el procesamiento de imágenes viven en servicios de aplicación.
 
@@ -81,7 +81,7 @@ flowchart LR
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🔄 Flujos de trabajo
+## <img src="docs/readme/ic-flujos.svg" width="24" height="24" alt=""> Flujos de trabajo
 
 **Cotización desde el sitio público**
 
@@ -117,7 +117,7 @@ sequenceDiagram
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🗃️ Modelo de datos
+## <img src="docs/readme/ic-datos.svg" width="24" height="24" alt=""> Modelo de datos
 
 Eloquent con migraciones relacionales (56 migraciones y 28 modelos en el repositorio). Los campos traducibles se guardan como JSON con claves de idioma.
 
@@ -149,7 +149,7 @@ erDiagram
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🧭 Criterios y decisiones
+## <img src="docs/readme/ic-criterios.svg" width="24" height="24" alt=""> Criterios y decisiones
 
 - **Contenido traducible en el mismo registro.** Español e inglés conviven en una sola entidad, y el respaldo al español se resuelve en helpers del modelo.
 - **Documentos privados.** CV y cartas nunca quedan en el disco público; se descargan solo por rutas administrativas protegidas.
@@ -164,7 +164,7 @@ erDiagram
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🧱 Stack
+## <img src="docs/readme/ic-stack.svg" width="24" height="24" alt=""> Stack
 
 | Capa | Tecnología | Versión |
 | --- | --- | --- |
@@ -181,7 +181,7 @@ erDiagram
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🗂️ Estructura del repo
+## <img src="docs/readme/ic-estructura.svg" width="24" height="24" alt=""> Estructura del repo
 
 ```text
 app/Http/Controllers/         sitio público y panel
@@ -198,7 +198,7 @@ tests/                        pruebas de autenticación y de funcionalidad
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🚀 Puesta en marcha
+## <img src="docs/readme/ic-arranque.svg" width="24" height="24" alt=""> Puesta en marcha
 
 Requisitos: PHP 8.2+, Composer, Node.js y npm compatibles con el lockfile, y MySQL si se usa esa conexión.
 
@@ -217,7 +217,7 @@ Variables relevantes (por nombre): `DB_*`, `MAIL_*`, `QUEUE_CONNECTION`, `APP_UR
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🧪 Pruebas y calidad
+## <img src="docs/readme/ic-pruebas.svg" width="24" height="24" alt=""> Pruebas y calidad
 
 Pruebas de autenticación: inicio y cierre de sesión, registro, verificación de correo, confirmación y actualización de contraseña, y recuperación. Usan SQLite en memoria.
 
@@ -231,13 +231,13 @@ La cifra registrada en la versión anterior de este README fue de 18 pruebas y 3
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 🚢 Despliegue
+## <img src="docs/readme/ic-despliegue.svg" width="24" height="24" alt=""> Despliegue
 
 No documentado en el repositorio. No hay infraestructura como código, receta de despliegue, Dockerfile ni pipeline de CI/CD. Proveedor, servidor web y estrategia de copias de seguridad no se pueden verificar desde el código.
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 📌 Estado y pendientes
+## <img src="docs/readme/ic-estado.svg" width="24" height="24" alt=""> Estado y pendientes
 
 - **Estado:** aplicación funcional con sitio bilingüe, CMS, catálogo, cotizaciones, newsletter, RR. HH. y panel.
 - **Último commit:** 2026-06-29, `VERSION 1.1.8`, en el historial local.
@@ -246,7 +246,7 @@ No documentado en el repositorio. No hay infraestructura como código, receta de
 
 <img src="docs/readme/divider.svg" alt="" width="100%">
 
-## 📄 Licencia y autoría
+## <img src="docs/readme/ic-licencia.svg" width="24" height="24" alt=""> Licencia y autoría
 
 Desarrollado por el **Ing. Santiago Abasto**.
 
